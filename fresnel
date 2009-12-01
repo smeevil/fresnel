@@ -1,13 +1,16 @@
-#!/usr/bin/ruby
-require File.dirname(__FILE__) + "/lib/lighthouse"
-require File.dirname(__FILE__) + "/lib/fresnel"
-require 'terminal-table/import'
+#!/usr/bin/env ruby
+require 'pathname' #detecting the correct path of a file even if its a symlink
+require File.dirname(Pathname.new(__FILE__).realpath) + "/lib/fresnel"
 
-fresnel=Fresnel.new
+
+fresnel=Fresnel.new(:cache=>true, :cache_timeout=>10.minutes)
 
 case ARGV[0]
   when "projects"
     fresnel.projects
+  when "tickets"
+    fresnel.tickets
   else
     puts "no idea what to do for : #{ARGV[0]}"
 end
+
