@@ -1,8 +1,10 @@
 require File.dirname(Pathname.new(__FILE__).realpath) + "/lighthouse"
 require File.dirname(Pathname.new(__FILE__).realpath) + "/date_parser"
 require File.dirname(Pathname.new(__FILE__).realpath) + "/cache"
+
 require 'activesupport'
 require 'terminal-table/import'
+require 'highline/import'
 
 class Fresnel
   attr_reader :global_config_file, :project_config_file, :app_description
@@ -25,15 +27,19 @@ class Fresnel
     puts "                config wizard                   "
     puts "================================================"
     puts
-    puts "what is your Lighthouse account ? "
-    puts "Example : http://<account>.lighthouseapp.com"
-
-    print "My lighthouse account is : "
-    config['account']=gets.chomp.downcase
+    config['account']=ask("My lighthouse account is : ") do |q|
+      q.validate = /^\w+$/ 
+      q.responses[:not_valid]="\nError :\nThat seems to be incorrect, we would like to have the <account> part in\nhttp://<account>.lighthouseapp.com , please try again"
+      q.responses[:ask_on_error]="My lighthouse account is : "
+    end
+    
     puts
     puts "what token would you like to use for the account : #{config['account']} ?"
-    print "My lighthouse token is : "
-    config['token']=gets.chomp.downcase
+    config['token']=ask("My lighthouse token is : ") do |q|
+      q.validate = /^[0-9a-f]{40}$/ 
+      q.responses[:not_valid]="\nError :\nThat seems to be incorrect, we would like to have your lighthouse token\n this looks something like : 1bd25cc2bab1fc4384b7edfe48433fba5f6ee43c"
+      q.responses[:ask_on_error]="My lighthouse token is : "
+    end
     puts
 
     puts "generated your config in #{self.global_config_file}, going on with main program..."
