@@ -1,0 +1,13 @@
+#!/usr/bin/ruby
+require File.dirname(__FILE__) + "/lib/lighthouse"
+require File.dirname(__FILE__) + "/lib/fresnel"
+require 'terminal-table/import'
+
+fresnel=Fresnel.new
+
+case ARGV[0]
+  when "projects"
+    fresnel.projects
+  else
+    puts "no idea what to do for : #{ARGV[0]}"
+end
