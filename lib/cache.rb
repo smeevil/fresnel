@@ -1,6 +1,6 @@
 class Cache
   attr_accessor :active, :timeout
-  
+
   def initialize(options)
     @active=options[:active]
     @timeout=options[:timeout]
@@ -13,7 +13,7 @@ class Cache
     File.open("/tmp/fresnel_#{options[:name]}.yml",'w+'){ |f| f.write(YAML::dump(data)) }
     return data
   end
-  
+
   def load(options)
     if self.active
       puts "caching is active !"
@@ -34,5 +34,10 @@ class Cache
       puts "cache disabled, fetching life data (and creating cache file for future use...once cache is enabled)"
       self.create(options)
     end
+  end
+
+  def clear(options)
+    puts "clearing cache /tmp/fresnel_#{options[:name]}.yml"
+    File.delete("/tmp/fresnel_#{options[:name]}.yml") if File.exists?("/tmp/fresnel_#{options[:name]}.yml")
   end
 end

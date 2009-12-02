@@ -31,13 +31,6 @@ class SetupWizard
     puts "current projects : "
     data=fresnel.projects(:object=>true)
     current_dir=File.expand_path(".").split("/").last
-    data.each do |d|
-      if current_dir=~/#{d.name}/
-        puts "likely : #{d.id} - #{d.name}"
-      else
-        puts "#{current_dir} not like : #{d.id} - #{d.name}"
-      end
-    end
     fresnel.projects
 
     config['project_id']=ask("please select which project id resides here : ") do |q|
