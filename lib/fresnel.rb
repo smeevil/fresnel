@@ -124,10 +124,13 @@ class Fresnel
       puts Frame.new(:header=>"Error",:body=>"We have no project id o.O")
     end
   end
-
+  
+  def get_ticket(number)
+    cache.load(:name=>"fresnel_ticket_#{number}",:action=>"Lighthouse::Ticket.find(#{number}, :params => { :project_id => #{self.current_project_id} })")
+  end
+  
   def show_ticket(number)
-
-    ticket = cache.load(:name=>"fresnel_ticket_#{number}",:action=>"Lighthouse::Ticket.find(#{number}, :params => { :project_id => #{self.current_project_id} })")
+    ticket = get_ticket(number)
     puts Frame.new(
       :header=>[
         "Ticket ##{number} : #{ticket.title.chomp}",
@@ -141,21 +144,22 @@ class Fresnel
     ticket.versions.each do |v|
       next if v.body==ticket.versions.first.body
       if v.body.nil?
-        puts "  State changed on #{DateParser.string(v.created_at.to_s)} to : #{v.state} by #{v.user_name}"
+        puts "\n State changed #{DateParser.string(v.created_at.to_s)} from #{v.diffable_attributes.state} => #{v.state} by #{v.user_name}\n\n"
       else
         user_date=v.user_name.capitalize
         date=DateParser.string(v.created_at.to_s)
         user_date=user_date.ljust((TERM_SIZE-5)-date.size)
         user_date+=date
 
-        puts Frame.new(:header=>user_date,:body=>v.body)
+        puts Frame.new(:header=>user_date,:body=>v.body,:footer=>"#{"#{"State changed from #{v.diffable_attributes.state} => #{v.state}" if v.diffable_attributes.respond_to?(:state)}"}")
       end
     end
+    puts "Current state : #{ticket.versions.last.state}"
   end
 
-  def comment(number)
+  def comment(number,state=nil)
     puts "create comment for #{number}"
-    ticket=cache.load(:name=>"fresnel_ticket_#{number}",:action=>"Lighthouse::Ticket.find(#{number}, :params => { :project_id => #{self.current_project_id} })")
+    ticket=get_ticket(number)
 
     File.open("/tmp/fresnel_ticket_#{number}_comment", "w+") do |f|
       f.puts
@@ -176,6 +180,7 @@ class Fresnel
       puts Frame.new(:header=>"Warning !", :body=>"Aborting comment because it was blank !")
     else
       ticket.body=body
+      ticket.state=state unless state.nil?
       if ticket.save
         cache.clear(:name=>"fresnel_ticket_#{number}")
         show_ticket(number)
@@ -217,6 +222,23 @@ class Fresnel
     else
       puts "something went wrong !"
       puts $!
+    end
+  end
+  
+  def change_state(options)
+    puts "should change state to #{options.inspect}"
+    ticket=get_ticket(options[:ticket])
+    old_state=ticket.state
+    options[:state]="resolved" if options[:state]=~/closed?/
+    if options[:state]=~/resolved|invalid/
+      comment(options[:ticket],options[:state])
+    else
+      ticket.state=options[:state]
+      if ticket.save
+        puts Frame.new(:header=>"Success",:body=>"State has changed from #{old_state} to #{options[:state]}")
+      else
+        puts Frame.new(:header=>"Error !",:body=>"Something went wrong ! #{$!}")
+      end
     end
   end
 end
