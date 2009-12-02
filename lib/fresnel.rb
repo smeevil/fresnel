@@ -100,7 +100,7 @@ class Fresnel
             t << [
               {:value=>ticket.number, :alignment=>:right},
               {:value=>ticket.state,:alignment=>:center},
-              Color.print(ticket.title,ticket.tag),
+              Color.print("#{ticket.title.strip[0..50]}#{"..." if ticket.title.size>50}",ticket.tag),
               Color.print(ticket.tag,ticket.tag),
               ticket.creator_name,
               ticket.assigned_user_name,
@@ -119,17 +119,49 @@ class Fresnel
   end
 
   def show_ticket(number)
-      
-     ticket = cache.load(:name=>"ticket_#{number}",:action=>"Lighthouse::Ticket.find(#{number}, :params => { :project_id => #{self.current_project_id} })")
-     puts
-     say "<%=color('#{ticket.title.gsub(/'/,"")}', UNDERLINE)%> (#{ticket.creator_name}) #{"tags : #{Color.print(ticket.tag,ticket.tag)}" unless ticket.tag.nil?}"
-     puts
-     ticket.versions.each do |v|
-       puts "user : #{v.user_name}"
-       puts v.body unless v.body.nil?
-       puts "State : #{v.state}"
-       puts "--------------------------------------------------------------------------------------------------------------"
-     end
+    
+    ticket = cache.load(:name=>"ticket_#{number}",:action=>"Lighthouse::Ticket.find(#{number}, :params => { :project_id => #{self.current_project_id} })")
+    puts
+    
+    ticket_output=Array.new
+    ticket_output<<"+----------------------------------------------------------------------------------------------------------------+"
+    ticket_output<< "Ticket ##{number} : #{ticket.title}"
+    ticket_output<< "Date : #{DateParser.string(ticket.created_at.to_s)} by #{ticket.creator_name}"
+    ticket_output<< "Tags : #{ticket.tag}"
+    ticket_output<< "+----------------------------------------------------------------------------------------------------------------+"
+    ticket_output<< ""
+    ticket_output+=ticket.versions.first.body.gsub(/\t/,"     ").gsub(/.{1,110}(?:\s|\Z)/){($& + 5.chr).gsub(/\n\005/,"\n").gsub(/\005/,"\n")}.split("\n")
+    ticket_output<< ""
+    ticket_output<< "+----------------------------------------------------------------------------------------------------------------+"
+    ticket_output.each do |l|
+      puts "#{" |" unless l=~/^\+/} #{l.ljust(110)} #{"|" unless l=~/^\+/}"
+    end
+    puts
+
+    ticket.versions.each do |v|
+      next if v.created_at==ticket.versions.first.body
+      if v.body.nil?
+        puts "  State changed on #{DateParser.string(v.created_at.to_s)} to : #{v.state} by #{v.creator_name}"
+      else
+        puts
+        ticket_output=Array.new
+        ticket_output<<"+----------------------------------------------------------------------------------------------------------------+"
+        str=v.creator_name.capitalize
+        date=DateParser.string(v.created_at.to_s)
+        str=str.ljust(110-date.size)
+        str+=date
+        ticket_output<<str
+        ticket_output<< "+----------------------------------------------------------------------------------------------------------------+"        
+        ticket_output<< ""
+        ticket_output+=v.body.gsub(/\t/,"     ").gsub(/.{1,110}(?:\s|\Z)/){($& + 5.chr).gsub(/\n\005/,"\n").gsub(/\005/,"\n")}.split("\n")
+        ticket_output<< ""
+        ticket_output<< "+----------------------------------------------------------------------------------------------------------------+"
+        ticket_output.each do |l|
+          puts "#{" |" unless l=~/^\+/} #{l.ljust(110)} #{"|" unless l=~/^\+/}"
+        end
+        puts
+      end
+    end
   end
 
 end
