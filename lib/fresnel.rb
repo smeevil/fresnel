@@ -2,6 +2,9 @@ require File.dirname(Pathname.new(__FILE__).realpath) + "/lighthouse"
 require File.dirname(Pathname.new(__FILE__).realpath) + "/date_parser"
 require File.dirname(Pathname.new(__FILE__).realpath) + "/cache"
 require File.dirname(Pathname.new(__FILE__).realpath) + "/color"
+require File.dirname(Pathname.new(__FILE__).realpath) + "/setup_wizard"
+
+
 
 require 'activesupport'
 require 'terminal-table/import'
@@ -16,36 +19,9 @@ class Fresnel
     @project_config_file=File.expand_path('.fresnel')
     @app_description="A lighthouseapp console manager"
     @lighthouse=Lighthouse
+    @cache=Cache.new(:active=>options[:cache]||false, :timeout=>options[:cache_timeout]||5.minutes)
     Lighthouse.account, Lighthouse.token = load_global_config
     @current_project_id=load_project_config
-    @cache=Cache.new(:active=>options[:cache]||false, :timeout=>options[:cache_timeout]||5.minutes)
-  end
-
-  def global_config_wizard
-    config=Hash.new
-    puts "================================================"
-    puts "    Fresnel - #{self.app_description}           "
-    puts "                config wizard                   "
-    puts "================================================"
-    puts
-    config['account']=ask("My lighthouse account is : ") do |q|
-      q.validate = /^\w+$/
-      q.responses[:not_valid]="\nError :\nThat seems to be incorrect, we would like to have the <account> part in\nhttp://<account>.lighthouseapp.com , please try again"
-      q.responses[:ask_on_error]="My lighthouse account is : "
-    end
-
-    puts
-    puts "what token would you like to use for the account : #{config['account']} ?"
-    config['token']=ask("My lighthouse token is : ") do |q|
-      q.validate = /^[0-9a-f]{40}$/
-      q.responses[:not_valid]="\nError :\nThat seems to be incorrect, we would like to have your lighthouse token\n this looks something like : 1bd25cc2bab1fc4384b7edfe48433fba5f6ee43c"
-      q.responses[:ask_on_error]="My lighthouse token is : "
-    end
-    puts
-
-    puts "generated your config in #{self.global_config_file}, going on with main program..."
-    File.open(self.global_config_file,'w+'){ |f| f.write(YAML::dump(config)) }
-    load_global_config
   end
 
   def load_global_config
@@ -55,11 +31,13 @@ class Fresnel
         return [config['account'], config['token']]
       else
         puts "global config did not validate , recreating"
-        global_config_wizard
+        SetupWizard.global(self)
+        load_global_config    
       end
     else
       puts "global config not found at #{self.global_config_file}, starting wizard"
-      global_config_wizard
+      SetupWizard.global(self)
+      load_global_config    
     end
   end
 
@@ -74,10 +52,10 @@ class Fresnel
       end
     else
       puts "project config not found at #{self.global_config_file}, starting wizard"
-      #todo local_config_wizard
+      SetupWizard.project(self)
+      load_project_config
     end
   end
-
 
   def account
     lighthouse.account
@@ -87,17 +65,19 @@ class Fresnel
     lighthouse.token
   end
 
-  def projects
+  def projects(options=Hash.new)
+    options[:object]||=false
     puts "fetching projects..."
-
+    
+    projects_data=cache.load(:name=>"projects",:action=>"Lighthouse::Project.find(:all)")
     project_table = table do |t|
       t.headings = ['id', 'project name', 'public', 'open tickets']
-      projects=cache.load(:name=>"projects",:action=>"Lighthouse::Project.find(:all)")
-      projects.each do |project|
+      
+      projects_data.each do |project|
         t << [{:value=>project.id, :alignment=>:right}, project.name, project.public, {:value=>project.open_tickets_count, :alignment=>:right}]
       end
     end
-    puts project_table
+    options[:object] ? projects_data : puts(project_table)
   end
 
   def tickets
@@ -141,20 +121,11 @@ class Fresnel
      say "<%=color('#{ticket.title.gsub(/'/,"")}', UNDERLINE)%> (#{ticket.creator_name}) #{"tags : #{Color.print(ticket.tag,ticket.tag)}" unless ticket.tag.nil?}"
      puts
      ticket.versions.each do |v|
-       if v.respond_to?(:body)
-         puts "user : #{v.user_name}"
-         puts v.body unless v.body.nil?
-         puts "State : #{v.state}"
-         puts "--------------------------------------------------------------------------------------------------------------"
-       else
-         puts "Somehow not everything of this object is loaded, processing raw yaml now..."
-         puts v.ivars['attributes']['body'] unless v.ivars['attributes']['body'].nil?
-         puts "State : #{v.ivars['attributes']['state']}"
-         puts "----------"
-       end
+       puts "user : #{v.user_name}"
+       puts v.body unless v.body.nil?
+       puts "State : #{v.state}"
+       puts "--------------------------------------------------------------------------------------------------------------"
      end
-
-
   end
 
 end

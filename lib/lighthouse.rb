@@ -201,6 +201,10 @@ module Lighthouse
     end
   end
 
+  class Version < Base
+  end
+
+
   # Find tickets
   #
   #  Lighthouse::Ticket.find(:all, :params => { :project_id => 44 })
@@ -261,7 +265,7 @@ module Lighthouse
       end.join(" ") if @tags.is_a?(Array)
       @tags = nil ; save_without_tags
     end
-    
+        
     alias_method_chain :save, :tags
 
     private
@@ -364,3 +368,5 @@ module ActiveResource
       end
   end
 end
+
+
