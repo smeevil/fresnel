@@ -7,7 +7,9 @@ class Cache
   end
   
   def create(options)
+    puts "eval #{options[:action]}"
     data=eval(options[:action])
+    puts "creating cache file #{options[:name]}..."
     File.open("/tmp/fresnel_#{options[:name]}.yml",'w+'){ |f| f.write(YAML::dump(data)) }
     return data
   end
