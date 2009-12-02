@@ -5,7 +5,7 @@ class Cache
     @active=options[:active]
     @timeout=options[:timeout]
   end
-  
+
   def create(options)
     puts "eval #{options[:action]}"
     data=eval(options[:action])
