@@ -202,9 +202,11 @@ module Lighthouse
   end
 
   class Version < Base
+    class DiffableAttributes < Base
+    end    
   end
 
-
+  
   # Find tickets
   #
   #  Lighthouse::Ticket.find(:all, :params => { :project_id => 44 })

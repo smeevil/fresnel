@@ -3,12 +3,20 @@ require File.dirname(Pathname.new(__FILE__).realpath) + "/date_parser"
 require File.dirname(Pathname.new(__FILE__).realpath) + "/cache"
 require File.dirname(Pathname.new(__FILE__).realpath) + "/color"
 require File.dirname(Pathname.new(__FILE__).realpath) + "/setup_wizard"
+require File.dirname(Pathname.new(__FILE__).realpath) + "/frame"
 
 
 
-require 'activesupport'
+require 'active_support'
 require 'terminal-table/import'
 require 'highline/import'
+
+class String
+  def wrap(col = 80)
+    self.gsub(/(.{1,#{col}})( +|$\n?)|(.{1,#{col}})/,
+      "\\1\\3\n")
+  end
+end
 
 class Fresnel
   attr_reader :global_config_file, :project_config_file, :app_description
@@ -30,14 +38,14 @@ class Fresnel
       if config && config.class==Hash && config.has_key?('account') && config.has_key?('token')
         return [config['account'], config['token']]
       else
-        puts "global config did not validate , recreating"
+        puts Frame.new(:header=>"Warning !",:body=>"global config did not validate , recreating")
         SetupWizard.global(self)
-        load_global_config    
+        load_global_config
       end
     else
-      puts "global config not found at #{self.global_config_file}, starting wizard"
+      puts Frame.new(:header=>"Notice",:body=>"global config not found at #{self.global_config_file}, starting wizard")
       SetupWizard.global(self)
-      load_global_config    
+      load_global_config
     end
   end
 
@@ -47,11 +55,11 @@ class Fresnel
       if config && config.class==Hash && config.has_key?('project_id')
         return config['project_id']
       else
-        puts "project config not found"
-        #todo local_config_wizard
+        puts Frame.new(:header=>"Warning !",:body=>"project config found but project_id was not declared")
+        load_project_config
       end
     else
-      puts "project config not found at #{self.global_config_file}, starting wizard"
+      puts Frame.new(:header=>"Notice",:body=>"project config not found at #{self.global_config_file}, starting wizard")
       SetupWizard.project(self)
       load_project_config
     end
@@ -68,11 +76,10 @@ class Fresnel
   def projects(options=Hash.new)
     options[:object]||=false
     puts "fetching projects..."
-    
-    projects_data=cache.load(:name=>"projects",:action=>"Lighthouse::Project.find(:all)")
+    projects_data=cache.load(:name=>"fresnel_projects",:action=>"Lighthouse::Project.find(:all)")
     project_table = table do |t|
       t.headings = ['id', 'project name', 'public', 'open tickets']
-      
+
       projects_data.each do |project|
         t << [{:value=>project.id, :alignment=>:right}, project.name, project.public, {:value=>project.open_tickets_count, :alignment=>:right}]
       end
@@ -82,7 +89,7 @@ class Fresnel
 
   def tickets
     if self.current_project_id
-      tickets=cache.load(:name=>"project_#{self.current_project_id}_tickets", :action=>"Lighthouse::Project.find(#{self.current_project_id}).tickets")
+      tickets=cache.load(:name=>"fresnel_project_#{self.current_project_id}_tickets", :action=>"Lighthouse::Project.find(#{self.current_project_id}).tickets")
       if tickets.any?
         tickets_table = table do |t|
           t.headings = [
@@ -100,10 +107,10 @@ class Fresnel
             t << [
               {:value=>ticket.number, :alignment=>:right},
               {:value=>ticket.state,:alignment=>:center},
-              Color.print("#{ticket.title.strip[0..50]}#{"..." if ticket.title.size>50}",ticket.tag),
-              Color.print(ticket.tag,ticket.tag),
+              "#{ticket.title.strip[0..50]}#{"..." if ticket.title.size>50}",
+              ticket.tag,
               ticket.creator_name,
-              ticket.assigned_user_name,
+              (ticket.assigned_user_name rescue "nobody"),
               {:value=>DateParser.string(ticket.created_at.to_s), :alignment=>:right},
               {:value=>DateParser.string(ticket.updated_at.to_s), :alignment=>:right}
             ]
@@ -111,57 +118,105 @@ class Fresnel
         end
         puts tickets_table
       else
-        puts "no tickets found yet..."
+        puts Frame.new(:header=>"Notice",:body=>"no tickets found yet...")
       end
     else
-      "sorry , we have no project id"
+      puts Frame.new(:header=>"Error",:body=>"We have no project id o.O")
     end
   end
 
   def show_ticket(number)
-    
-    ticket = cache.load(:name=>"ticket_#{number}",:action=>"Lighthouse::Ticket.find(#{number}, :params => { :project_id => #{self.current_project_id} })")
-    puts
-    
-    ticket_output=Array.new
-    ticket_output<<"+----------------------------------------------------------------------------------------------------------------+"
-    ticket_output<< "Ticket ##{number} : #{ticket.title}"
-    ticket_output<< "Date : #{DateParser.string(ticket.created_at.to_s)} by #{ticket.creator_name}"
-    ticket_output<< "Tags : #{ticket.tag}"
-    ticket_output<< "+----------------------------------------------------------------------------------------------------------------+"
-    ticket_output<< ""
-    ticket_output+=ticket.versions.first.body.gsub(/\t/,"     ").gsub(/.{1,110}(?:\s|\Z)/){($& + 5.chr).gsub(/\n\005/,"\n").gsub(/\005/,"\n")}.split("\n")
-    ticket_output<< ""
-    ticket_output<< "+----------------------------------------------------------------------------------------------------------------+"
-    ticket_output.each do |l|
-      puts "#{" |" unless l=~/^\+/} #{l.ljust(110)} #{"|" unless l=~/^\+/}"
-    end
-    puts
+
+    ticket = cache.load(:name=>"fresnel_ticket_#{number}",:action=>"Lighthouse::Ticket.find(#{number}, :params => { :project_id => #{self.current_project_id} })")
+    puts Frame.new(
+      :header=>[
+        "Ticket ##{number} : #{ticket.title.chomp}",
+        "Date : #{DateParser.string(ticket.created_at.to_s)} by #{ticket.creator_name}",
+        "Tags : #{ticket.tag}"
+      ],
+      :body=>ticket.versions.first.body
+    )
+
 
     ticket.versions.each do |v|
-      next if v.created_at==ticket.versions.first.body
+      next if v.body==ticket.versions.first.body
       if v.body.nil?
-        puts "  State changed on #{DateParser.string(v.created_at.to_s)} to : #{v.state} by #{v.creator_name}"
+        puts "  State changed on #{DateParser.string(v.created_at.to_s)} to : #{v.state} by #{v.user_name}"
       else
-        puts
-        ticket_output=Array.new
-        ticket_output<<"+----------------------------------------------------------------------------------------------------------------+"
-        str=v.creator_name.capitalize
+        user_date=v.user_name.capitalize
         date=DateParser.string(v.created_at.to_s)
-        str=str.ljust(110-date.size)
-        str+=date
-        ticket_output<<str
-        ticket_output<< "+----------------------------------------------------------------------------------------------------------------+"        
-        ticket_output<< ""
-        ticket_output+=v.body.gsub(/\t/,"     ").gsub(/.{1,110}(?:\s|\Z)/){($& + 5.chr).gsub(/\n\005/,"\n").gsub(/\005/,"\n")}.split("\n")
-        ticket_output<< ""
-        ticket_output<< "+----------------------------------------------------------------------------------------------------------------+"
-        ticket_output.each do |l|
-          puts "#{" |" unless l=~/^\+/} #{l.ljust(110)} #{"|" unless l=~/^\+/}"
-        end
-        puts
+        user_date=user_date.ljust((TERM_SIZE-5)-date.size)
+        user_date+=date
+
+        puts Frame.new(:header=>user_date,:body=>v.body)
       end
     end
   end
 
+  def comment(number)
+    puts "create comment for #{number}"
+    ticket=cache.load(:name=>"fresnel_ticket_#{number}",:action=>"Lighthouse::Ticket.find(#{number}, :params => { :project_id => #{self.current_project_id} })")
+
+    File.open("/tmp/fresnel_ticket_#{number}_comment", "w+") do |f|
+      f.puts
+      f.puts "# Please enter the comment for this ticket. Lines starting"
+      f.puts "# with '#' will be ignored, and an empty message aborts the commit."
+      `fresnel #{number}`.each{ |l| f.write "# #{l}" }
+    end
+
+    system("mate -w /tmp/fresnel_ticket_#{number}_comment")
+
+    body=Array.new
+    File.read("/tmp/fresnel_ticket_#{number}_comment").each do |l|
+      body << l unless l=~/^#/
+    end
+
+    body=body.to_s
+    if body.blank?
+      puts Frame.new(:header=>"Warning !", :body=>"Aborting comment because it was blank !")
+    else
+      ticket.body=body
+      if ticket.save
+        cache.clear(:name=>"fresnel_ticket_#{number}")
+        show_ticket(number)
+      else
+        puts "something went wrong"
+        puts $!
+      end
+    end
+  end
+
+  def create
+    system("mate -w /tmp/fresnel_new_ticket")
+    data=File.read("/tmp/fresnel_new_ticket")
+    body=Array.new
+    title=""
+    if data.blank?
+      puts Frame.new(:header=>"Warning !", :body=>"Aborting creation because the ticket was blank !")
+    else
+      data.each do |l|
+        if title.blank?
+          title=l
+          next
+        end
+        body << l
+      end
+      body=body.to_s
+      tags=ask("Tags : ")
+      tags=tags.split(" ")
+    end
+    ticket = Lighthouse::Ticket.new(
+      :project_id=>self.current_project_id,
+      :title=>title,
+      :body=>body
+    )
+    ticket.tags=tags
+    if ticket.save
+      File.delete("/tmp/fresnel_new_ticket")
+      show_ticket(ticket.number)
+    else
+      puts "something went wrong !"
+      puts $!
+    end
+  end
 end
