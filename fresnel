@@ -2,7 +2,7 @@
 require 'pathname' #detecting the correct path of a file even if its a symlink
 require File.dirname(Pathname.new(__FILE__).realpath) + "/lib/fresnel"
 
-COLOR=true
+COLOR=false
 CACHE=true
 
 fresnel=Fresnel.new(:cache=>CACHE, :cache_timeout=>10.minutes)
