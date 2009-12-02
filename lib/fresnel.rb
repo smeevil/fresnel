@@ -82,33 +82,37 @@ class Fresnel
 
   def tickets
     if self.current_project_id
-      tickets=cache.load(:name=>"tickets", :action=>"Lighthouse::Project.find(#{self.current_project_id}).tickets")
-      tickets_table = table do |t|
-        t.headings = [
-          {:value=>'#',:alignment=>:center},
-          {:value=>'state',:alignment=>:center},
-          {:value=>Color.print('title'),:alignment=>:center},
-          {:value=>Color.print('tags'),:alignment=>:center},
-          {:value=>'by',:alignment=>:center},
-          {:value=>'assigned to',:alignment=>:center},
-          'created at',
-          'updated at'
-        ]
-
-        tickets.sort_by(&:number).reverse.each do |ticket|
-          t << [
-            {:value=>ticket.number, :alignment=>:right},
-            {:value=>ticket.state,:alignment=>:center},
-            Color.print(ticket.title,ticket.tag),
-            Color.print(ticket.tag,ticket.tag),
-            ticket.creator_name,
-            ticket.assigned_user_name,
-            {:value=>DateParser.string(ticket.created_at.to_s), :alignment=>:right},
-            {:value=>DateParser.string(ticket.updated_at.to_s), :alignment=>:right}
+      tickets=cache.load(:name=>"project_#{self.current_project_id}_tickets", :action=>"Lighthouse::Project.find(#{self.current_project_id}).tickets")
+      if tickets.any?
+        tickets_table = table do |t|
+          t.headings = [
+            {:value=>'#',:alignment=>:center},
+            {:value=>'state',:alignment=>:center},
+            {:value=>Color.print('title'),:alignment=>:center},
+            {:value=>Color.print('tags'),:alignment=>:center},
+            {:value=>'by',:alignment=>:center},
+            {:value=>'assigned to',:alignment=>:center},
+            'created at',
+            'updated at'
           ]
+
+          tickets.sort_by(&:number).reverse.each do |ticket|
+            t << [
+              {:value=>ticket.number, :alignment=>:right},
+              {:value=>ticket.state,:alignment=>:center},
+              Color.print(ticket.title,ticket.tag),
+              Color.print(ticket.tag,ticket.tag),
+              ticket.creator_name,
+              ticket.assigned_user_name,
+              {:value=>DateParser.string(ticket.created_at.to_s), :alignment=>:right},
+              {:value=>DateParser.string(ticket.updated_at.to_s), :alignment=>:right}
+            ]
+          end
         end
+        puts tickets_table
+      else
+        puts "no tickets found yet..."
       end
-      puts tickets_table
     else
       "sorry , we have no project id"
     end
