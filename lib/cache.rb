@@ -16,14 +16,15 @@ class Cache
 
   def load(options)
     if self.active
+      cache_timeout=options[:timeout]||self.timeout
       puts "caching is active !"
       if File.exists?("/tmp/fresnel_#{options[:name]}.yml")
         created_at=File.mtime("/tmp/fresnel_#{options[:name]}.yml")
-        if (Time.now-created_at) < self.timeout
-          puts "returning cached info (age : #{(Time.now-created_at).round}, timeout : #{self.timeout})"
+        if (Time.now-created_at) < cache_timeout
+          puts "returning cached info (age : #{(Time.now-created_at).round}, timeout : #{cache_timeout})"
           YAML::load_file("/tmp/fresnel_#{options[:name]}.yml")
         else
-          puts "refreshing data because the cached is older then the timeout (age : #{(Time.now-created_at).round}, timeout : #{self.timeout})"
+          puts "refreshing data because the cached is older then the timeout (age : #{(Time.now-created_at).round}, timeout : #{cache_timeout})"
           self.create(options)
         end
       else
