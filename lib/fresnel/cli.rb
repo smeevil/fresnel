@@ -70,10 +70,11 @@ class Cli
       end
     }
     longest_key = help_lines.map{|line| line.first.size}.max
-    
+    body="Fresnel is a Console App that helps manage Lighthouse (LH).\nYou can find LH at http://lighthouseapp.com\n\n"
+    body+=help_lines.map {|line| "fresnel #{line.first}#{" "*(longest_key - line.first.size)}   #{line.last}"}.join("\n")
     puts Frame.new(
       :header=>"Fresnel - A lighthouseapp console manager - help", 
-      :body=>help_lines.map {|line| "fresnel #{line.first}#{" "*(longest_key - line.first.size)}   #{line.last}"}.join("\n"),
+      :body=>body,
       :footer=>"Created by Narnach & Smeevil - licence : mit"
     )
   end
