@@ -358,7 +358,7 @@ class Fresnel
       ticket.assigned_user_id=options[:user_id] if options[:user_id].present?
       if ticket.save
         puts Frame.new(:header=>"Success",:body=>"State has changed from #{old_state} to #{options[:state]} #{"and is reassigned to #{options[:user_id]}" if options[:user_id].present?}")
-        show_ticket(number)
+        show_ticket(options[:ticket])
       else
         puts Frame.new(:header=>"Error !",:body=>"Something went wrong ! #{$!}")
       end
