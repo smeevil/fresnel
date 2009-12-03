@@ -16,7 +16,7 @@ class String
     self.gsub(/(.{1,#{col}})( +|$\n?)|(.{1,#{col}})/,
       "\\1\\3\n")
   end
-  
+
   def truncate(size)
     "#{self.strip[0..size]}#{"..." if self.size>50}"
   end
@@ -78,6 +78,23 @@ class Fresnel
     lighthouse.token
   end
 
+  def ask_for_action(actions_available="")
+    if actions_available.present?
+      puts actions_available
+      regexp="^(#{actions_available.scan(/\[(.*?)\]/).flatten.join("|")}|[0-9]+)$"
+    else
+      regexp="^(q|[0-9]+)$"
+    end
+    ask("Action : ") do |q|
+      q.default="q"
+      q.validate=/#{regexp}/
+    end
+  end
+  
+  def create_project
+    puts "create project is not implemented yet"
+  end
+  
   def projects(options=Hash.new)
     options[:object]||=false
     options[:selectable]||false
@@ -95,59 +112,100 @@ class Fresnel
         t << row
       end
     end
-    options[:object] ? projects_data : puts(project_table)
-  end
-
-  def tickets
-    if self.current_project_id
-      tickets=cache.load(:name=>"fresnel_project_#{self.current_project_id}_tickets", :action=>"Lighthouse::Project.find(#{self.current_project_id}).tickets")
-      if tickets.any?
-        tickets_table = table do |t|
-          t.headings = [
-            {:value=>'#',:alignment=>:center},
-            {:value=>'state',:alignment=>:center},
-            {:value=>Color.print('title'),:alignment=>:center},
-            {:value=>Color.print('tags'),:alignment=>:center},
-            {:value=>'by',:alignment=>:center},
-            {:value=>'assigned to',:alignment=>:center},
-            'created at',
-            'updated at'
-          ]
-
-          tickets.sort_by(&:number).reverse.each do |ticket|
-            t << [
-              {:value=>ticket.number, :alignment=>:right},
-              {:value=>ticket.state,:alignment=>:center},
-              "#{ticket.title.truncate(50)}",
-              ticket.tag,
-              ticket.creator_name,
-              (ticket.assigned_user_name rescue "nobody"),
-              {:value=>DateParser.string(ticket.created_at.to_s), :alignment=>:right},
-              {:value=>DateParser.string(ticket.updated_at.to_s), :alignment=>:right}
-            ]
-          end
-        end
-        puts tickets_table
-      else
-        puts Frame.new(:header=>"Notice",:body=>"no tickets found yet...")
-      end
+    if options[:object]
+      return projects_data
     else
-      puts Frame.new(:header=>"Error",:body=>"We have no project id o.O")
+      puts(project_table)
+      action=ask_for_action("[q]uit, [c]reate or project #")
+      case action
+        when "c" then create_project
+        when /\d+/ then tickets(:project_id=>projects_data[action.to_i].id)
+        else
+          exit(0)
+      end
     end
   end
-  
+
+  def tickets(options=Hash.new)
+    project_id=options[:project_id]||self.current_project_id
+    tickets=options[:tickets]||cache.load(:name=>"fresnel_project_#{project_id}_tickets", :action=>"Lighthouse::Project.find(#{project_id}).tickets")
+    if tickets.any?
+      tickets_table = table do |t|
+        t.headings = [
+          {:value=>'#',:alignment=>:center},
+          {:value=>'state',:alignment=>:center},
+          {:value=>Color.print('title'),:alignment=>:center},
+          {:value=>Color.print('tags'),:alignment=>:center},
+          {:value=>'by',:alignment=>:center},
+          {:value=>'assigned to',:alignment=>:center},
+          'created at',
+          'updated at'
+        ]
+
+        tickets.sort_by(&:number).reverse.each do |ticket|
+          t << [
+            {:value=>ticket.number, :alignment=>:right},
+            {:value=>ticket.state,:alignment=>:center},
+            "#{ticket.title.truncate(50)}",
+            ticket.tag,
+            ticket.creator_name,
+            (ticket.assigned_user_name rescue "nobody"),
+            {:value=>DateParser.string(ticket.created_at.to_s), :alignment=>:right},
+            {:value=>DateParser.string(ticket.updated_at.to_s), :alignment=>:right}
+          ]
+        end
+      end
+      puts tickets_table
+      action=ask_for_action("[q]uit, [b]ins, [p]rojects, [c]reate or ticket #")
+      case action
+        when "b" then get_bins
+        when "c" then create
+        when "p" then projects(:selectable=>true)
+        when /\d+/ then show_ticket(action)
+        else
+          exit(0)
+      end
+    else
+      puts Frame.new(:header=>"Notice",:body=>"no tickets found yet...")
+    end
+
+  end
+
+  def get_bins(project_id=self.current_project_id)
+    bins=cache.load(:name=>"fresnel_project_#{project_id}_bins",:action=>"Lighthouse::Project.find(#{project_id}).bins")
+    bins.reject!{|b|true unless b.user_id==self.current_user_id || b.shared}
+    bins_table = table do |t|
+      t.headings = ['#', 'bin', 'tickets', 'query']
+      bins.each_with_index do |bin,i|
+        t << [i, bin.name,{:value=>bin.tickets_count, :alignment=>:right},bin.query]
+      end
+    end
+    puts bins_table
+    bin_id=ask_for_action
+    if bin_id=="q"
+       exit(0)
+    else
+      puts "Fetching tickets in bin : #{bins[bin_id.to_i].name}"
+      tickets(:tickets=>bins[bin_id.to_i].tickets)
+    end
+  end
+
+  def get_bin_tickets(options)
+    puts "should get tickets for bin #{options[:id].inspect}"
+  end
+
   def get_ticket(number)
     cache.load(:name=>"fresnel_ticket_#{number}",:action=>"Lighthouse::Ticket.find(#{number}, :params => { :project_id => #{self.current_project_id} })")
   end
-  
+
   def get_project(project_id=self.current_project_id)
     cache.load(:name=>"fresnel_project_#{project_id}",:action=>"Lighthouse::Project.find(#{project_id})")
   end
-  
+
   def get_project_members(project_id=self.current_project_id)
     cache.load(:name=>"fresnel_project_#{project_id}_members", :action=>"Lighthouse::Project.find(#{project_id}).memberships", :timeout=>1.day)
   end
-  
+
   def show_ticket(number)
     ticket = get_ticket(number)
     puts Frame.new(
@@ -168,15 +226,29 @@ class Fresnel
         date=DateParser.string(v.created_at.to_s)
         user_date=user_date.ljust((TERM_SIZE-5)-date.size)
         user_date+=date
-        
+
         footer=Array.new
         footer<<"State changed from #{v.diffable_attributes.state} => #{v.state}" if v.diffable_attributes.respond_to?(:state)
         footer<<"Assignment changed => #{v.assigned_user_name}" if v.diffable_attributes.respond_to?(:assigned_user)
-        
+
         puts Frame.new(:header=>user_date,:body=>v.body,:footer=>footer)
       end
     end
     puts "Current state : #{ticket.versions.last.state}"
+    action=ask_for_action("[q]uit, [t]ickets, [b]ins, [c]omment, [a]ssign, [r]esolve, [s]elf, [o]pen, [h]old, [w]eb")
+    case action
+      when "t" then tickets
+      when "b" then get_bins
+      when "c" then comment(number)
+      when "a" then assign(:ticket=>number)
+      when "r" then change_state(:ticket=>number,:state=>"resolved")
+      when "s" then claim(:ticket=>number)
+      when "o" then change_state(:ticket=>number,:state=>"open")
+      when "h" then change_state(:ticket=>number,:state=>"hold")
+      when "w" then open_browser_for_ticket(number)
+      else
+        exit(0)
+    end
   end
 
   def comment(number,state=nil)
@@ -250,7 +322,7 @@ class Fresnel
       puts Frame.new(:header=>"Warning !", :body=>"Aborting creation because the ticket was blank !")
     end
   end
-  
+
   def change_state(options)
     puts "should change state to #{options.inspect}"
     ticket=get_ticket(options[:ticket])
@@ -263,19 +335,22 @@ class Fresnel
       ticket.assigned_user_id=options[:user_id] if options[:user_id].present?
       if ticket.save
         puts Frame.new(:header=>"Success",:body=>"State has changed from #{old_state} to #{options[:state]} #{"and is reassigned to #{options[:user_id]}" if options[:user_id].present?}")
+        show_ticket(number)
       else
         puts Frame.new(:header=>"Error !",:body=>"Something went wrong ! #{$!}")
       end
     end
   end
-  
+
   def open_browser_for_ticket(number)
     #fast
     #`open "https://#{self.account}.lighthouseapp.com/projects/#{self.current_project_id}/tickets/#{number}"`
     #or save
+    puts "opening ticket #{number}in browser"
     `open "#{get_ticket(number).url}"`
+    tickets
   end
-  
+
   def assign(options)
     puts "should assign ticket #{options[:ticket]} to someone :"
     unless options[:user_id]
@@ -301,7 +376,7 @@ class Fresnel
       puts Frame.new(:header=>"Error",:body=>"assigning failed !")
     end
   end
-  
+
   def claim(options)
     puts "current user is : #{self.current_user_id}"
     ticket=get_ticket(options[:ticket])
@@ -310,6 +385,6 @@ class Fresnel
     else
       assign(:ticket=>options[:ticket],:user_id=>self.current_user_id)
     end
-    
+
   end
 end
