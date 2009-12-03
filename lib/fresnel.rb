@@ -271,7 +271,7 @@ class Fresnel
       ],
       :body=>ticket.versions.first.body
     )
-    ticket.versions.first.body.scan(/(http|https)(:\/\/)([a-zA-Z0-9.\/_-]+)/).each{|url|links<<url.join}
+    ticket.versions.first.body.scan(/(http|https)(:\/\/)([a-zA-Z0-9.\/_-]+)| (www\.[a-zA-Z0-9.\/_-]+)/).each{|url|links<<url.join}
     ticket.versions.each_with_index do |v,i|
       next if i==0
       if v.respond_to?(:diffable_attributes) && v.body.nil?
@@ -288,7 +288,7 @@ class Fresnel
         footer<<"Assignment changed => #{v.assigned_user_name}" if v.diffable_attributes.respond_to?(:assigned_user)
 
         puts Frame.new(:header=>user_date,:body=>v.body,:footer=>footer)
-        v.body.scan(/(http|https)(:\/\/)([a-zA-Z0-9.\/_-]+)/).each{|url|links<<url.join}
+        v.body.scan(/(http|https)(:\/\/)([a-zA-Z0-9.\/_-]+)| (www\.[a-zA-Z0-9.\/_-]+)/).each{|url|links<<url.join}
       end
     end
     puts "Current state : #{ticket.versions.last.state}"
