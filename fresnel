@@ -4,18 +4,23 @@ require File.dirname(Pathname.new(__FILE__).realpath) + "/lib/fresnel"
 
 COLOR=false
 CACHE=true
-CACHE_TIMEOUT=5.seconds
+CACHE_TIMEOUT=500.seconds
 TERM_SIZE=80
 
+Signal.trap("SIGINT") { 
+  puts "Stopping..."
+  exit(0) 
+}
 
 fresnel=Fresnel.new(:cache=>CACHE, :cache_timeout=>CACHE_TIMEOUT)
-
 
 case ARGV[0]
   when "projects"
     fresnel.projects
   when "tickets"
     fresnel.tickets
+  when "bins"
+    fresnel.get_bins
   when "create"
     fresnel.create
   when /\d+/
