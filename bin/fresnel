@@ -4,7 +4,7 @@ require 'fresnel/cli'
 
 COLOR=false
 CACHE=true
-CACHE_TIMEOUT=500.seconds
+CACHE_TIMEOUT=5.seconds
 TERM_SIZE=80
 DEBUG=false
 
