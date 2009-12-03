@@ -13,5 +13,5 @@ Signal.trap("SIGINT") {
   puts "Stopping..."
   exit(0)
 }
-
+system("clear")
 Cli.new(ARGV).run!

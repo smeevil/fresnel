@@ -31,7 +31,6 @@ class SetupWizard
     config['user_id']=ask("My lighthouse user_id is : ", Integer) do |q|
       q.default=user_id
     end
-    
 
     puts "generated your config in #{fresnel.global_config_file}, going on with main program..."
     File.open(fresnel.global_config_file,'w+'){ |f| f.write(YAML::dump(config)) }
@@ -39,12 +38,11 @@ class SetupWizard
   
   def self.project(fresnel)
     config=Hash.new
-    puts "current projects : "
     data=fresnel.projects(:object=>true)
     current_dir=File.expand_path(".").split("/").last
-    fresnel.projects(:selectable=>true)
+    fresnel.projects(:selectable=>true, :clear=>false, :setup=>true)
 
-    project_id=ask("please select which # resides here : ", Integer) do |q|
+    project_id=ask("please select which project # resides here : ", Integer) do |q|
        q.validate = /^\d+$/
        q.below=data.size
        q.responses[:ask_on_error]="This project is # : "
