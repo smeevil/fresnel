@@ -15,7 +15,7 @@ class Cli
       when "create"
         @fresnel.create
       when "help"
-        puts help
+        help
       when /\d+/
         if @argv[1]
           case @argv[1]
@@ -55,8 +55,8 @@ class Cli
         'comment' => 'Show comments for ticket',
         '[open|closed|hold|resolved|invalid]' => 'Change ticket state',
         'online' => 'Open browser for ticket',
-        'assign' => 'Assign ticket to another user',
-        'claim' => 'Claim ticket for yourself'
+        'assign' => 'Assign ticket to user',
+        'claim' => 'Assign ticket to self'
       }
     }
     help_lines = []
@@ -70,6 +70,11 @@ class Cli
       end
     }
     longest_key = help_lines.map{|line| line.first.size}.max
-    help_lines.map {|line| "fresnel #{line.first}#{" "*(longest_key - line.first.size)}   #{line.last}"}.join("\n")
+    
+    puts Frame.new(
+      :header=>"Fresnel - A lighthouseapp console manager - help", 
+      :body=>help_lines.map {|line| "fresnel #{line.first}#{" "*(longest_key - line.first.size)}   #{line.last}"}.join("\n"),
+      :footer=>"Created by Narnach & Smeevil - licence : mit"
+    )
   end
 end
