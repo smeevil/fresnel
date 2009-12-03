@@ -261,6 +261,7 @@ class Fresnel
 
   def show_ticket(number)
     system("clear")
+    links=Array.new
     ticket = get_ticket(number)
     puts Frame.new(
       :header=>[
@@ -270,6 +271,7 @@ class Fresnel
       ],
       :body=>ticket.versions.first.body
     )
+    ticket.versions.first.body.scan(/(http|https)(:\/\/)([a-zA-Z0-9.\/_-]+)/).each{|url|links<<url.join}
     ticket.versions.each_with_index do |v,i|
       next if i==0
       if v.respond_to?(:diffable_attributes) && v.body.nil?
@@ -286,10 +288,11 @@ class Fresnel
         footer<<"Assignment changed => #{v.assigned_user_name}" if v.diffable_attributes.respond_to?(:assigned_user)
 
         puts Frame.new(:header=>user_date,:body=>v.body,:footer=>footer)
+        v.body.scan(/(http|https)(:\/\/)([a-zA-Z0-9.\/_-]+)/).each{|url|links<<url.join}
       end
     end
     puts "Current state : #{ticket.versions.last.state}"
-    action=ask_for_action("[q]uit, [t]ickets, [b]ins, [c]omment, [a]ssign, [r]esolve, [s]elf, [o]pen, [h]old, [w]eb")
+    action=ask_for_action("[q]uit, [t]ickets, [b]ins, [c]omment, [a]ssign, [r]esolve, [s]elf, [o]pen, [h]old, [w]eb, [l]inks")
     case action
       when "t" then tickets
       when "b" then get_bins
@@ -300,6 +303,20 @@ class Fresnel
       when "o" then change_state(:ticket=>number,:state=>"open")
       when "h" then change_state(:ticket=>number,:state=>"hold")
       when "w" then open_browser_for_ticket(number)
+      when "l" 
+        link_table=table do |t|
+          t.headings=['#','link']
+          links.each_with_index{|link,i|t << [i,link]}
+        end
+        puts link_table
+        pick=ask("open link # : ", Integer) do |q|
+          q.below=links.size
+          q.above=-1
+        end
+        url=links[pick]
+        url="http://#{url}" unless url=~/^http/
+        `open '#{url}'`
+        show_ticket(number)
       else
         exit(0)
     end
