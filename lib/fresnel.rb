@@ -308,16 +308,12 @@ class Fresnel
   def comment(number,state=nil)
     puts "create comment for #{number}"
     ticket=get_ticket(number)
-
     File.open("/tmp/fresnel_ticket_#{number}_comment", "w+") do |f|
-      f.puts
       f.puts "# Please enter the comment for this ticket. Lines starting"
       f.puts "# with '#' will be ignored, and an empty message aborts the commit."
-      `fresnel #{number}`.each{ |l| f.write "# #{l}" }
+      `echo "q" | fresnel #{number}`.each{ |l| f.write "# #{l}" }
     end
-
     system("mate -w /tmp/fresnel_ticket_#{number}_comment")
-
     body=Array.new
     File.read("/tmp/fresnel_ticket_#{number}_comment").each do |l|
       body << l unless l=~/^#/
