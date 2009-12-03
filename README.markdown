@@ -63,64 +63,45 @@ fresnel projects
     | # | project name | public | open tickets |
     +---+--------------+--------+--------------+
     | 0 | Fresnel      | true   |            3 |
-    | 1 | M*** - 4***  | false  |            3 |
-    | 2 | M*** - 5***  | false  |            9 |
-    | 3 | M*** - E***  | false  |            2 |
-    | 4 | M*** - R***  | false  |            4 |
-    | 5 | SlickPics    | false  |           38 |
+    | 1 | Rails        | true   |          123 |
     +---+--------------+--------+--------------+
 
 
-fresnel <tickets>
+fresnel tickets
 
     Fetching unresolved tickets...
-    +-----+-------+--------------------------------------------------------+-----------+
-    |  #  | state |                         title                          |   tags    |
-    +-----+-------+--------------------------------------------------------+-----------+
-    | 100 |  new  | Ruby script om server updates te stroomlijnen          |           |
-    |  99 |  new  | in dashboard stats create members weergeven            |           |
-    |  97 |  new  | in sms_text add boolean wap_push_text                  |           |
-    |  96 |  new  | Timetrace of posts , log in table url and time take... |           |
-    |  83 | open  | css styling pagination                                 | high      |
-    |  61 | open  | ie7 compatible                                         | high      |
-    |  43 |  new  | 5959 in titel en afzender                              |           |
-    |   2 |  new  | pretty urls en artist overviews                        | urls      |
-    |   1 |  new  | toestellen weer geven bij javagames                    | javagames |
-    +-----+-------+--------------------------------------------------------+-----------+
+    +----+-------+--------------------------------------------------------+--------+------------------+-------------+----------------+----------------+
+    | #  | state |                         title                          |  tags  |        by        | assigned to | created at     | updated at     |
+    +----+-------+--------------------------------------------------------+--------+------------------+-------------+----------------+----------------+
+    | 10 |  new  | Add option to open Hoptoad link in browser             | medium | Wes Oldenbeuving | nobody      |    Today 11:22 |    Today 11:23 |
+    |  9 |  new  | cache invalidation                                     | medium | Smeevil          | nobody      |    Today 08:17 |    Today 08:18 |
+    |  6 | open  | would be nice if we could create a new lighthouse p... | low    | Smeevil          | Smeevil     | 02-12-09 22:10 | 02-12-09 22:16 |
+    +----+-------+--------------------------------------------------------+--------+------------------+-------------+----------------+----------------+
 
+fresnel 6
 
-fresnel 2
+    +-----------------------------------------------------------------------------+
+    | Ticket #6 : would be nice if we could create a new lighthouse projec...     |
+    | Date : 02-12-09 22:10 by Smeevil                                            |
+    | Tags : low                                                                  |
+    +-----------------------------------------------------------------------------+
+    |                                                                             |
+    |                                                                             |
+    +-----------------------------------------------------------------------------+
 
-    Fetching tickets #2...
+    Assignment changed 02-12-09 21:14 => Smeevil by Smeevil
+
     +-----------------------------------------------------------------------------+
-    | Ticket #3 : Creating first ticket from fresnel                              |
-    | Date : 02-12-09 16:12 by Smeevil                                            |
-    | Tags : bogus high test                                                      |
-    +-----------------------------------------------------------------------------+
-    |                                                                             |
-    | Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod    |
-    | tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim        |
-    | veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea     |
-    | commodo consequat. Duis aute irure dolor in reprehenderit in voluptate      |
-    | velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat  |
-    | cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id   |
-    | est laborum.                                                                |
-    |                                                                             |
-    | elit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat   |
-    | cupidat                                                                     |
-    |  at non proident, sunt in culpa qui officia deserunt mollit anim id est     |
-    | laborum.                                                                    |
-    |                                                                             |
-    +-----------------------------------------------------------------------------+
-    +-----------------------------------------------------------------------------+
-    | Smeevil                                                      02-12-09 20:20 |
+    | Smeevil                                                      02-12-09 21:24 |
     +-----------------------------------------------------------------------------+
     |                                                                             |
-    | seems to work                                                               |
+    | seems its changing state !                                                  |
+    | now lets see if we can do it again !                                        |
     |                                                                             |
     +-----------------------------------------------------------------------------+
-    | State changed from new => resolved                                          |
+    | Assignment changed => Wes Oldenbeuving                                      |
     +-----------------------------------------------------------------------------+
-    Current state : resolved
-    [q]uit, [t]ickets, [b]ins, [c]omment, [a]ssign, [r]esolve, [s]elf, [o]pen, [h]old, [w]eb
-    Action : |q|
+
+    Assignment changed 02-12-09 22:10 => Smeevil by Smeevil
+
+    Current state : open
