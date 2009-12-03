@@ -12,6 +12,8 @@ class Cli
         @fresnel.tickets
       when "bins"
         @fresnel.get_bins
+      when "bin"
+        @fresnel.get_tickets_in_bin(ARGV[1])
       when "create"
         @fresnel.create
       when "help"
@@ -48,6 +50,7 @@ class Cli
       'projects' => 'Show all projects',
       'tickets' => 'Show all tickets',
       'bins' => 'Show all ticket bins',
+      'bin <id>' => 'Show ticket in bin <id>',
       'create' => 'Create a ticket',
       'help' => 'This screen',
       '<id>' => {
