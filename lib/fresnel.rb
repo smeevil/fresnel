@@ -220,13 +220,31 @@ class Fresnel
     else
       puts "Fetching tickets in bin : #{bins[bin_id.to_i].name}"
       tickets(:tickets=>bins[bin_id.to_i].tickets)
+      def tickets.age=(seconds)
+        @age_in_seconds=seconds
+      end
+      def tickets.age
+        @age_in_seconds
+      end
+      tickets.age=0
+      return tickets
     end
   end
   
   def get_tickets_in_bin(bin)
     bins=cache.load(:name=>"fresnel_project_#{self.current_project_id}_bins",:action=>"Lighthouse::Project.find(#{self.current_project_id}).bins")
     bins.reject!{|b|true unless b.user_id==self.current_user_id || b.shared}
-    tickets(:tickets=>bins[bin.to_i].tickets, :bin_name=>bins[bin.to_i].name)
+    data=bins[bin.to_i].tickets
+
+    def data.age=(seconds)
+      @age_in_seconds=seconds
+    end
+    def data.age
+      @age_in_seconds
+    end
+    data.age=0
+    
+    tickets(:tickets=>data, :bin_name=>bins[bin.to_i].name)
   end
 
   def get_ticket(number)
