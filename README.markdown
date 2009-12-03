@@ -47,9 +47,9 @@ add a key like :
 
 The ticket overview table will add columns if it fits, in the following order :
 
-* ticket number 
-* state
-* title
+* ticket number *
+* state *
+* title *
 - assigned to
 - by
 - tags
