@@ -27,6 +27,14 @@ Getting started
 
 Once you have Fresnel installed, run 'fresnel help' to see the syntax.
 
+Problems, Comments and Suggestions
+==================================
+
+Please post them on https://govannon.lighthouseapp.com/projects/42260-fresnel/
+or mail it to : ticket+govannon.42260-7vwej7yr@lighthouseapp.com
+
+
+
 Examples
 ========
 
