@@ -1,7 +1,7 @@
 class Cli
   def initialize(argv)
     @argv = argv
-    @fresnel = Fresnel.new(:cache=>CACHE, :cache_timeout=>CACHE_TIMEOUT)
+    @fresnel = Fresnel.new
   end
   
   def run!

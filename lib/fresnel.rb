@@ -5,7 +5,6 @@ require 'highline/import'
 require "fresnel/lighthouse"
 require "fresnel/date_parser"
 require "fresnel/cache"
-require "fresnel/color"
 require "fresnel/setup_wizard"
 require "fresnel/frame"
 
@@ -18,7 +17,7 @@ class String
   end
 
   def truncate(size)
-    "#{self.strip[0..size]}#{"..." if self.size>50}"
+    "#{self.strip[0..size]}#{"..." if self.size>size}"
   end
 end
 
@@ -31,7 +30,7 @@ class Fresnel
     @project_config_file=File.expand_path('.fresnel')
     @app_description="A lighthouseapp console manager"
     @lighthouse=Lighthouse
-    @cache=Cache.new(:active=>options[:cache]||false, :timeout=>options[:cache_timeout]||5.minutes)
+    @cache=Cache.new
     Lighthouse.account, Lighthouse.token, @current_user_id = load_global_config
     @current_project_id=load_project_config
 
@@ -40,6 +39,11 @@ class Fresnel
   def load_global_config
     if File.exists? self.global_config_file
       config = YAML.load_file(self.global_config_file)
+      
+      @@cache_timeout=config['cache_timeout'] if config.has_key?('cache_timeout')
+      @@debug=config['debug'] if config.has_key?('debug')
+      @@term_size=config['term_size'] if config.has_key?('term_size')
+      
       if config && config.class==Hash && config.has_key?('account') && config.has_key?('token') && config.has_key?('user_id')
         return [config['account'], config['token'], config['user_id']]
       else
@@ -99,8 +103,9 @@ class Fresnel
     options[:object]||=false
     system("clear") unless options[:clear]==false || options[:object]
     options[:selectable]||false
-    puts "fetching projects..." unless options[:object]
+    print "Fetching projects..." unless options[:object]
     projects_data=cache.load(:name=>"fresnel_projects",:action=>"Lighthouse::Project.find(:all)")
+    puts " [done] - data is #{projects_data.age}s old , max is #{@@cache_timeout}s"
     project_table = table do |t|
       t.headings=[]
       t.headings << '#' if options[:selectable]
@@ -131,33 +136,40 @@ class Fresnel
 
   def tickets(options=Hash.new)
     system("clear")
-    options[:all] ? puts("Fetching all tickets#{" in bin #{options[:bin_name]}" if options[:bin_name].present?}...") : puts("Fetching unresolved tickets#{" in bin #{options[:bin_name]}" if options[:bin_name].present?}...")
+    options[:all] ? print("Fetching all tickets#{" in bin #{options[:bin_name]}" if options[:bin_name].present?}...") : print("Fetching unresolved tickets#{" in bin #{options[:bin_name]}" if options[:bin_name].present?}...")
+    STDOUT.flush
     project_id=options[:project_id]||self.current_project_id
     tickets=options[:tickets]||cache.load(:name=>"fresnel_project_#{project_id}_tickets#{"_all" if options[:all]}", :action=>"Lighthouse::Ticket.find(:all, :params=>{:project_id=>#{project_id} #{",:q=>'not-state:closed'" unless options[:all]}})")
+    puts " [done] - data is #{tickets.age}s old , max is #{@@cache_timeout}s"
     if tickets.any?
+      puts "TERM SIZE : #{@@term_size}"
       tickets_table = table do |t|
-        t.headings = [
+        prepped_headings=[
           {:value=>'#',:alignment=>:center},
           {:value=>'state',:alignment=>:center},
-          {:value=>Color.print('title'),:alignment=>:center},
-          {:value=>Color.print('tags'),:alignment=>:center},
-          {:value=>'by',:alignment=>:center},
-          {:value=>'assigned to',:alignment=>:center},
-          'created at',
-          'updated at'
+          {:value=>'title',:alignment=>:center},
         ]
-
+        prepped_headings << {:value=>'assigned to',:alignment=>:center} if @@term_size>=90
+        prepped_headings << {:value=>'by',:alignment=>:center} if @@term_size>=105
+        prepped_headings << {:value=>'tags',:alignment=>:center} if @@term_size>=120
+        prepped_headings << 'created at' if @@term_size>=140
+        prepped_headings << 'updated at' if @@term_size>=160
+        
+        t.headings = prepped_headings #must assign the heading at once, else it will b0rk the output 
+        
         tickets.sort_by(&:number).reverse.each do |ticket|
-          t << [
+          cols=[
             {:value=>ticket.number, :alignment=>:right},
             {:value=>ticket.state,:alignment=>:center},
-            "#{ticket.title.truncate(50)}",
-            ticket.tag,
-            ticket.creator_name,
-            (ticket.assigned_user_name rescue "nobody"),
-            {:value=>DateParser.string(ticket.created_at.to_s), :alignment=>:right},
-            {:value=>DateParser.string(ticket.updated_at.to_s), :alignment=>:right}
+            "#{ticket.title.truncate(50)}"
           ]
+          cols << (ticket.assigned_user_name.split(" ").first.truncate(10) rescue "nobody") if @@term_size>=90
+          cols << ticket.creator_name.split(" ").first.truncate(10) if @@term_size>=105
+          cols << (ticket.tag.truncate(9) rescue "") if @@term_size>=120
+          cols << {:value=>DateParser.string(ticket.created_at.to_s), :alignment=>:right} if @@term_size>=140
+          cols << {:value=>DateParser.string(ticket.updated_at.to_s), :alignment=>:right} if @@term_size>=160
+          
+          t << cols #must assign the cols at once, else it will b0rk the output
         end
       end
       puts tickets_table
@@ -191,7 +203,10 @@ class Fresnel
 
   def get_bins(project_id=self.current_project_id)
     system("clear")
+    print "Fetching ticket bins..."
+    STDOUT.flush
     bins=cache.load(:name=>"fresnel_project_#{project_id}_bins",:action=>"Lighthouse::Project.find(#{project_id}).bins")
+    puts " [done] - data is #{bins.age}s old , max is #{@@cache_timeout}s"
     bins.reject!{|b|true unless b.user_id==self.current_user_id || b.shared}
     bins_table = table do |t|
       t.headings = ['#', 'bin', 'tickets', 'query']
@@ -246,7 +261,7 @@ class Fresnel
       else
         user_date=v.user_name.capitalize
         date=DateParser.string(v.created_at.to_s)
-        user_date=user_date.ljust((TERM_SIZE-5)-date.size)
+        user_date=user_date.ljust((@@term_size-5)-date.size)
         user_date+=date
 
         footer=Array.new

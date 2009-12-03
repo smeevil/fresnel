@@ -3,10 +3,10 @@ require 'fresnel'
 require 'fresnel/cli'
 
 COLOR=false
-CACHE=true
-CACHE_TIMEOUT=5.seconds
-TERM_SIZE=80
-DEBUG=false
+@@term_size=`tput cols`.to_i
+@@term_size=80 if @@term_size==0 #if tputs does not exist
+@@debug=false
+@@cache_timeout=1.minute
 
 Signal.trap("SIGINT") {
   puts "Stopping..."

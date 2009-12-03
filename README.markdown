@@ -22,6 +22,42 @@ How to install
 
 Use 'rake gem' to build the gem or 'rake install' to build and install the gem.
 
+Cache
+=====
+
+You can control the cache time in your global config file : ~/.fresnel
+
+add a key like :
+    cache_timeout: 60
+
+This will set the timeout of the cache to 1 minute.
+When fresnel makes changes, the cache will be invalidated automagically.
+We would recommend to use a minimum of 10 seconds.
+
+Terminal size
+=============
+
+By default we detect your terminal size,
+if that fails it will be set to 80.
+Though if you like to override it you can !
+
+in your global config file : ~/.fresnel
+add a key like :
+    term_size: 60
+
+The ticket overview table will add columns if it fits, in the following order :
+
+* ticket number 
+* state
+* title
+- assigned to
+- by
+- tags
+- created at
+- updated at
+
+items with a * are always shown ;)
+
 Getting started
 ===============
 

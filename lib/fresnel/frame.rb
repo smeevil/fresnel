@@ -10,7 +10,7 @@ class Frame
     @output=String.new
     
     line="+"
-    (TERM_SIZE-3).times{line+="-"}
+    (@@term_size-3).times{line+="-"}
     line+="+"
 
     collect=Array.new
@@ -20,7 +20,7 @@ class Frame
       collect << line
     end
     collect << ""
-    collect += @body.chomp.wrap(TERM_SIZE-5).split("\n")
+    collect += @body.chomp.wrap(@@term_size-5).split("\n")
     collect << ""
     collect << line
     if footer.any?
@@ -29,7 +29,7 @@ class Frame
     end
     
     collect.each do |l|
-      self.output+="#{"| " unless l=~/^\+/}#{l.ljust(TERM_SIZE-5)}#{" |" unless l=~/^\+/}\n"
+      self.output+="#{"| " unless l=~/^\+/}#{l.ljust(@@term_size-5)}#{" |" unless l=~/^\+/}\n"
     end
     
   end
