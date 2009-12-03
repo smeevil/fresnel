@@ -5,10 +5,22 @@ require File.dirname(Pathname.new(__FILE__).realpath) + "/color"
 require File.dirname(Pathname.new(__FILE__).realpath) + "/setup_wizard"
 require File.dirname(Pathname.new(__FILE__).realpath) + "/frame"
 
+require 'rubygems'
+missing_gems=false
+%w[activesupport terminal-table highline].each do |g|
+  unless Gem.available?(g)
+    missing_gems=true
+    puts "missing gem : #{g}"
+    puts "try : sudo gem install #{g}"
+  end
+end
+exit(0) if missing_gems
 
-require 'active_support'
+
+require 'active_support' 
 require 'terminal-table/import'
 require 'highline/import'
+
 HighLine.track_eof = false
 
 class String
