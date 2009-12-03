@@ -1,25 +1,13 @@
-require File.dirname(Pathname.new(__FILE__).realpath) + "/lighthouse"
-require File.dirname(Pathname.new(__FILE__).realpath) + "/date_parser"
-require File.dirname(Pathname.new(__FILE__).realpath) + "/cache"
-require File.dirname(Pathname.new(__FILE__).realpath) + "/color"
-require File.dirname(Pathname.new(__FILE__).realpath) + "/setup_wizard"
-require File.dirname(Pathname.new(__FILE__).realpath) + "/frame"
-
-require 'rubygems'
-missing_gems=false
-%w[activesupport terminal-table highline].each do |g|
-  unless Gem.available?(g)
-    missing_gems=true
-    puts "missing gem : #{g}"
-    puts "try : sudo gem install #{g}"
-  end
-end
-exit(0) if missing_gems
-
-
-require 'active_support' 
+require 'active_support'
 require 'terminal-table/import'
 require 'highline/import'
+
+require "fresnel/lighthouse"
+require "fresnel/date_parser"
+require "fresnel/cache"
+require "fresnel/color"
+require "fresnel/setup_wizard"
+require "fresnel/frame"
 
 HighLine.track_eof = false
 
@@ -102,11 +90,11 @@ class Fresnel
       q.validate=/#{regexp}/
     end
   end
-  
+
   def create_project
     puts "create project is not implemented yet"
   end
-  
+
   def projects(options=Hash.new)
     system("clear")
     options[:object]||=false
