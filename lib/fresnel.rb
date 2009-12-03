@@ -131,7 +131,7 @@ class Fresnel
 
   def tickets(options=Hash.new)
     system("clear")
-    options[:all] ? puts("Fetching all tickets...") : puts("Fetching unresolved tickets...")
+    options[:all] ? puts("Fetching all tickets#{" in bin #{options[:bin_name]}" if options[:bin_name].present?}...") : puts("Fetching unresolved tickets#{" in bin #{options[:bin_name]}" if options[:bin_name].present?}...")
     project_id=options[:project_id]||self.current_project_id
     tickets=options[:tickets]||cache.load(:name=>"fresnel_project_#{project_id}_tickets#{"_all" if options[:all]}", :action=>"Lighthouse::Ticket.find(:all, :params=>{:project_id=>#{project_id} #{",:q=>'not-state:closed'" unless options[:all]}})")
     if tickets.any?
@@ -173,7 +173,18 @@ class Fresnel
           exit(0)
       end
     else
-      puts Frame.new(:header=>"Notice",:body=>"no tickets found yet...")
+      puts Frame.new(:header=>"Notice",:body=>"no #{"unresolved " unless options[:all]}tickets #{"in bin #{options[:bin_name]}"}...")
+      action=ask_for_action("[q]uit, [b]ins, [p]rojects, [u]nresolved, [a]ll, [c]reate")
+      case action
+        when "b" then get_bins
+        when "c" then create
+        when "p" then projects(:selectable=>true)
+        when "a" then tickets(:all=>true)
+        when "u" then self.tickets
+        else
+          exit(0)
+      end
+      
     end
 
   end
@@ -196,6 +207,12 @@ class Fresnel
       puts "Fetching tickets in bin : #{bins[bin_id.to_i].name}"
       tickets(:tickets=>bins[bin_id.to_i].tickets)
     end
+  end
+  
+  def get_tickets_in_bin(bin)
+    bins=cache.load(:name=>"fresnel_project_#{self.current_project_id}_bins",:action=>"Lighthouse::Project.find(#{self.current_project_id}).bins")
+    bins.reject!{|b|true unless b.user_id==self.current_user_id || b.shared}
+    tickets(:tickets=>bins[bin.to_i].tickets, :bin_name=>bins[bin.to_i].name)
   end
 
   def get_ticket(number)
