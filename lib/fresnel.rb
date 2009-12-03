@@ -76,7 +76,7 @@ class Fresnel
         load_project_config
       end
     else
-      puts Frame.new(:header=>"Notice",:body=>"project config not found at #{self.global_config_file}, starting wizard")
+      puts Frame.new(:header=>"Notice",:body=>"project config not found at #{self.project_config_file}, starting wizard")
       SetupWizard.project(self)
       load_project_config
     end
@@ -108,10 +108,10 @@ class Fresnel
   end
   
   def projects(options=Hash.new)
-    system("clear")
     options[:object]||=false
+    system("clear") unless options[:clear]==false || options[:object]
     options[:selectable]||false
-    puts "fetching projects..."
+    puts "fetching projects..." unless options[:object]
     projects_data=cache.load(:name=>"fresnel_projects",:action=>"Lighthouse::Project.find(:all)")
     project_table = table do |t|
       t.headings=[]
@@ -129,12 +129,14 @@ class Fresnel
       return projects_data
     else
       puts(project_table)
-      action=ask_for_action("[q]uit, [c]reate or project #")
-      case action
-        when "c" then create_project
-        when /\d+/ then tickets(:project_id=>projects_data[action.to_i].id)
-        else
-          exit(0)
+      unless options[:setup]
+        action=ask_for_action("[q]uit, [c]reate or project #")
+        case action
+          when "c" then create_project
+          when /\d+/ then tickets(:project_id=>projects_data[action.to_i].id)
+          else
+            exit(0)
+        end
       end
     end
   end
