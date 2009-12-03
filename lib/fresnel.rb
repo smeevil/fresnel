@@ -142,7 +142,6 @@ class Fresnel
     tickets=options[:tickets]||cache.load(:name=>"fresnel_project_#{project_id}_tickets#{"_all" if options[:all]}", :action=>"Lighthouse::Ticket.find(:all, :params=>{:project_id=>#{project_id} #{",:q=>'not-state:closed'" unless options[:all]}})")
     puts " [done] - data is #{tickets.age}s old , max is #{@@cache_timeout}s"
     if tickets.any?
-      puts "TERM SIZE : #{@@term_size}"
       tickets_table = table do |t|
         prepped_headings=[
           {:value=>'#',:alignment=>:center},
