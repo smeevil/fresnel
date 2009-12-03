@@ -80,7 +80,7 @@ class Fresnel
 
   def ask_for_action(actions_available="")
     if actions_available.present?
-      puts actions_available
+      puts actions_available.wrap
       regexp="^(#{actions_available.scan(/\[(.*?)\]/).flatten.join("|")}|[0-9]+)$"
     else
       regexp="^(q|[0-9]+)$"
@@ -96,6 +96,7 @@ class Fresnel
   end
   
   def projects(options=Hash.new)
+    system("clear")
     options[:object]||=false
     options[:selectable]||false
     puts "fetching projects..."
@@ -127,6 +128,7 @@ class Fresnel
   end
 
   def tickets(options=Hash.new)
+    system("clear")
     project_id=options[:project_id]||self.current_project_id
     tickets=options[:tickets]||cache.load(:name=>"fresnel_project_#{project_id}_tickets", :action=>"Lighthouse::Project.find(#{project_id}).tickets")
     if tickets.any?
@@ -172,6 +174,7 @@ class Fresnel
   end
 
   def get_bins(project_id=self.current_project_id)
+    system("clear")
     bins=cache.load(:name=>"fresnel_project_#{project_id}_bins",:action=>"Lighthouse::Project.find(#{project_id}).bins")
     bins.reject!{|b|true unless b.user_id==self.current_user_id || b.shared}
     bins_table = table do |t|
@@ -190,10 +193,6 @@ class Fresnel
     end
   end
 
-  def get_bin_tickets(options)
-    puts "should get tickets for bin #{options[:id].inspect}"
-  end
-
   def get_ticket(number)
     cache.load(:name=>"fresnel_ticket_#{number}",:action=>"Lighthouse::Ticket.find(#{number}, :params => { :project_id => #{self.current_project_id} })")
   end
@@ -207,6 +206,7 @@ class Fresnel
   end
 
   def show_ticket(number)
+    system("clear")
     ticket = get_ticket(number)
     puts Frame.new(
       :header=>[
@@ -305,6 +305,7 @@ class Fresnel
         tags=ask("Tags : ")
         tags=tags.split(" ")
       end
+      puts "creating ticket..."
       ticket = Lighthouse::Ticket.new(
         :project_id=>self.current_project_id,
         :title=>title,
@@ -348,7 +349,7 @@ class Fresnel
     #or save
     puts "opening ticket #{number}in browser"
     `open "#{get_ticket(number).url}"`
-    tickets
+    show_ticket(number)
   end
 
   def assign(options)
