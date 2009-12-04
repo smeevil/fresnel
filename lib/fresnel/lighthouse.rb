@@ -170,6 +170,18 @@ module Lighthouse
   end
 
   class User < Base
+    def self.find(*args, &block)
+      if (user_id = args.first.to_i) > 0
+        cache = Cache.new
+        cache = Cache.new
+        cache.load(:name => "user_#{user_id}") do
+          super(*args, &block)
+        end
+      else
+        super(*args, &block)
+      end
+    end
+
     def memberships(options = {})
       Membership.find(:all, :params => {:user_id => id})
     end
