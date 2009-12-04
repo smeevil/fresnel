@@ -39,11 +39,11 @@ class Fresnel
   def load_global_config
     if File.exists? self.global_config_file
       config = YAML.load_file(self.global_config_file)
-      
+
       @@cache_timeout=config['cache_timeout'] if config.has_key?('cache_timeout')
       @@debug=config['debug'] if config.has_key?('debug')
       @@term_size=config['term_size'] if config.has_key?('term_size')
-      
+
       if config && config.class==Hash && config.has_key?('account') && config.has_key?('token') && config.has_key?('user_id')
         return [config['account'], config['token'], config['user_id']]
       else
@@ -153,9 +153,9 @@ class Fresnel
         prepped_headings << {:value=>'tags',:alignment=>:center} if @@term_size>=120
         prepped_headings << 'created at' if @@term_size>=140
         prepped_headings << 'updated at' if @@term_size>=160
-        
-        t.headings = prepped_headings #must assign the heading at once, else it will b0rk the output 
-        
+
+        t.headings = prepped_headings #must assign the heading at once, else it will b0rk the output
+
         tickets.sort_by(&:number).reverse.each do |ticket|
           cols=[
             {:value=>ticket.number, :alignment=>:right},
@@ -167,7 +167,7 @@ class Fresnel
           cols << (ticket.tag.truncate(9) rescue "") if @@term_size>=120
           cols << {:value=>DateParser.string(ticket.created_at.to_s), :alignment=>:right} if @@term_size>=140
           cols << {:value=>DateParser.string(ticket.updated_at.to_s), :alignment=>:right} if @@term_size>=160
-          
+
           t << cols #must assign the cols at once, else it will b0rk the output
         end
       end
@@ -195,7 +195,7 @@ class Fresnel
         else
           exit(0)
       end
-      
+
     end
 
   end
@@ -230,7 +230,7 @@ class Fresnel
       return tickets
     end
   end
-  
+
   def get_tickets_in_bin(bin)
     bins=cache.load(:name=>"fresnel_project_#{self.current_project_id}_bins",:action=>"Lighthouse::Project.find(#{self.current_project_id}).bins")
     bins.reject!{|b|true unless b.user_id==self.current_user_id || b.shared}
@@ -243,7 +243,7 @@ class Fresnel
       @age_in_seconds
     end
     data.age=0
-    
+
     tickets(:tickets=>data, :bin_name=>bins[bin.to_i].name)
   end
 
@@ -261,7 +261,6 @@ class Fresnel
 
   def show_ticket(number)
     system("clear")
-    links=Array.new
     ticket = get_ticket(number)
     puts Frame.new(
       :header=>[
@@ -271,7 +270,6 @@ class Fresnel
       ],
       :body=>ticket.versions.first.body
     )
-    ticket.versions.first.body.scan(/(http|https)(:\/\/)([a-zA-Z0-9.\/_-]+)| (www\.[a-zA-Z0-9.\/_-]+)/).each{|url|links<<url.join}
     ticket.versions.each_with_index do |v,i|
       next if i==0
       if v.respond_to?(:diffable_attributes) && v.body.nil?
@@ -288,7 +286,6 @@ class Fresnel
         footer<<"Assignment changed => #{v.assigned_user_name}" if v.diffable_attributes.respond_to?(:assigned_user)
 
         puts Frame.new(:header=>user_date,:body=>v.body,:footer=>footer)
-        v.body.scan(/(http|https)(:\/\/)([a-zA-Z0-9.\/_-]+)| (www\.[a-zA-Z0-9.\/_-]+)/).each{|url|links<<url.join}
       end
     end
     puts "Current state : #{ticket.versions.last.state}"
@@ -303,23 +300,32 @@ class Fresnel
       when "o" then change_state(:ticket=>number,:state=>"open")
       when "h" then change_state(:ticket=>number,:state=>"hold")
       when "w" then open_browser_for_ticket(number)
-      when "l" 
-        link_table=table do |t|
-          t.headings=['#','link']
-          links.each_with_index{|link,i|t << [i,link]}
-        end
-        puts link_table
-        pick=ask("open link # : ", Integer) do |q|
-          q.below=links.size
-          q.above=-1
-        end
-        url=links[pick]
-        url="http://#{url}" unless url=~/^http/
-        `open '#{url}'`
-        show_ticket(number)
+      when "l" then links(number)
       else
         exit(0)
     end
+  end
+
+  def links(number)
+    ticket = get_ticket(number)
+    links = ticket.versions.map{ |version|
+      version.body.to_s.scan(/(http|https)(:\/\/)([a-zA-Z0-9.\/_-]+)| (www\.[a-zA-Z0-9.\/_-]+)/).map{ |url|
+        url.join
+      }
+    }.flatten
+    link_table=table do |t|
+      t.headings=['#','link']
+      links.each_with_index{|link,i|t << [i,link]}
+    end
+    puts link_table
+    pick=ask("open link # : ", Integer) do |q|
+      q.below=links.size
+      q.above=-1
+    end
+    url=links[pick]
+    url="http://#{url}" unless url=~/^http/
+    `open '#{url}'`
+    show_ticket(number)
   end
 
   def comment(number,state=nil)
