@@ -209,7 +209,16 @@ class Fresnel
        exit(0)
     else
       puts "Fetching tickets in bin : #{bins[bin_id.to_i].name}"
-      tickets(:tickets=>bins[bin_id.to_i].tickets)
+      data=bins[bin_id.to_i].tickets
+
+      def data.age=(seconds)
+        @age_in_seconds=seconds
+      end
+      def data.age
+        @age_in_seconds
+      end
+      data.age=0
+      tickets(:tickets=>data)
       def tickets.age=(seconds)
         @age_in_seconds=seconds
       end
