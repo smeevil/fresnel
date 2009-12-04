@@ -47,3 +47,8 @@ task :diff do
   puts "Extra files:"
   puts extra_files.join(" ")
 end
+
+desc 'Local install the latest gem version'
+task :reinstall do
+  system("rm -f pkg/*.gem && rake gem && gem install pkg/*.gem")
+end
