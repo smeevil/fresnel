@@ -313,6 +313,11 @@ class Fresnel
         url.join
       }
     }.flatten.uniq
+    if links.size == 0
+      puts "No links found"
+      sleep 1
+      show_ticket(number)
+    end
     link_table=table do |t|
       t.headings=['#','link']
       links.each_with_index{|link,i|t << [i,link]}
