@@ -7,19 +7,9 @@ require "fresnel/date_parser"
 require "fresnel/cache"
 require "fresnel/setup_wizard"
 require "fresnel/frame"
+require "fresnel/string"
 
 HighLine.track_eof = false
-
-class String
-  def wrap(col = 80)
-    self.gsub(/(.{1,#{col}})( +|$\n?)|(.{1,#{col}})/,
-      "\\1\\3\n")
-  end
-
-  def truncate(size)
-    "#{self.strip[0..size]}#{"..." if self.size>size}"
-  end
-end
 
 class Fresnel
   attr_reader :global_config_file, :project_config_file, :app_description
@@ -308,11 +298,7 @@ class Fresnel
 
   def links(number)
     ticket = get_ticket(number)
-    links = ticket.versions.map{ |version|
-      version.body.to_s.scan(/(http|https)(:\/\/)([a-zA-Z0-9.\/_-]+)| (www\.[a-zA-Z0-9.\/_-]+)/).map{ |url|
-        url.join
-      }
-    }.flatten.uniq
+    links = ticket.versions.map{ |version| version.body.to_s.scrape_urls }.flatten.uniq
     if links.size == 0
       puts "No links found"
       sleep 1
