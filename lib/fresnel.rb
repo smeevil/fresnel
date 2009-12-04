@@ -312,7 +312,7 @@ class Fresnel
       version.body.to_s.scan(/(http|https)(:\/\/)([a-zA-Z0-9.\/_-]+)| (www\.[a-zA-Z0-9.\/_-]+)/).map{ |url|
         url.join
       }
-    }.flatten
+    }.flatten.uniq
     link_table=table do |t|
       t.headings=['#','link']
       links.each_with_index{|link,i|t << [i,link]}
