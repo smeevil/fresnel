@@ -418,7 +418,8 @@ class Fresnel
       ticket.assigned_user_id=options[:user_id] if options[:user_id].present?
       if ticket.save
         cache.clear(:name=>"fresnel_ticket_#{options[:ticket]}")
-        puts Frame.new(:header=>"Success",:body=>"State has changed from #{old_state} to #{options[:state]} #{"and is reassigned to #{options[:user_id]}" if options[:user_id].present?}")
+        user_name = Lighthouse::User.find(options[:user_id]).name
+        puts Frame.new(:header=>"Success",:body=>"State has changed from #{old_state} to #{options[:state]} #{"and is reassigned to #{user_name}" if options[:user_id].present?}")
         show_ticket(options[:ticket])
       else
         puts Frame.new(:header=>"Error !",:body=>"Something went wrong ! #{$!}")
@@ -456,7 +457,8 @@ class Fresnel
     ticket.assigned_user_id=options[:user_id]
     if ticket.save
       cache.clear(:name=>"fresnel_ticket_#{options[:ticket]}")
-      puts Frame.new(:header=>"Success",:body=>"Reassigned ticket ##{options[:ticket]} to #{options[:user_id]} !")
+      user_name = Lighthouse::User.find(options[:user_id]).name
+      puts Frame.new(:header=>"Success",:body=>"Reassigned ticket ##{options[:ticket]} to #{user_name} !")
     else
       puts Frame.new(:header=>"Error",:body=>"assigning failed !")
     end
