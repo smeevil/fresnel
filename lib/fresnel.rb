@@ -439,8 +439,8 @@ class Fresnel
   end
 
   def assign(options)
-    puts "should assign ticket #{options[:ticket]} to someone :"
     unless options[:user_id]
+      puts "should assign ticket #{options[:ticket]} to someone :"
       members=get_project_members
       members_table = table do |t|
         t.headings = ['#', 'user_id', 'username']
@@ -467,7 +467,7 @@ class Fresnel
   end
 
   def claim(options)
-    puts "current user is : #{self.current_user_id}"
+    puts "current user is : #{Lighthouse::User.find(self.current_user_id).name}"
     ticket=get_ticket(options[:ticket])
     if ticket.state=="new"
       change_state(:ticket=>options[:ticket], :state=>"open", :user_id=>self.current_user_id)  #get around the cache ...
