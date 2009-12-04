@@ -3,7 +3,7 @@ class Cli
     @argv = argv
     @fresnel = Fresnel.new
   end
-  
+
   def run!
     case @argv[0]
       when "projects"
@@ -31,6 +31,8 @@ class Cli
               @fresnel.assign(:ticket=>@argv[0])
             when "claim"
               @fresnel.claim(:ticket=>@argv[0])
+            when "links"
+              @fresnel.links(@argv[0])
             else
               puts Frame.new(:header=>"Notice",:body=>"not sure what to do for #{@argv[1]}")
           end
@@ -42,9 +44,9 @@ class Cli
         #puts Frame.new(:header=>"Notice",:body=>"not sure what to do for #{@argv[0]}")
     end
   end
-  
+
   private
-  
+
   def help
     help = {
       'projects' => 'Show all projects',
@@ -59,7 +61,8 @@ class Cli
         '[open|closed|hold|resolved|invalid]' => 'Change ticket state',
         'online' => 'Open browser for ticket',
         'assign' => 'Assign ticket to user',
-        'claim' => 'Assign ticket to self'
+        'claim' => 'Assign ticket to self',
+        'links' => 'Extract all links from the ticket and its comment and open one in your browser.'
       }
     }
     help_lines = []
@@ -76,7 +79,7 @@ class Cli
     body="Fresnel is a Console App that helps manage Lighthouse (LH).\nYou can find LH at http://lighthouseapp.com\n\n"
     body+=help_lines.map {|line| "fresnel #{line.first}#{" "*(longest_key - line.first.size)}   #{line.last}"}.join("\n")
     puts Frame.new(
-      :header=>"Fresnel - A lighthouseapp console manager - help", 
+      :header=>"Fresnel - A lighthouseapp console manager - help",
       :body=>body,
       :footer=>"Created by Narnach & Smeevil - licence : mit"
     )
