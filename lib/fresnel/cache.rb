@@ -12,10 +12,16 @@ class Cache
       puts str
     end
   end
-  
-  def create(options)
+
+  def create(options, &block)
     log "eval #{options[:action]}"
-    data=eval(options[:action])
+    if block
+      data = block.call
+    elsif options[:action]
+      data=eval(options[:action])
+    else
+      raise ArgumentError, "No block or code to eval for a cache-able value"
+    end
     log "creating cache file #{options[:name]}..."
     File.open("/tmp/fresnel_#{options[:name]}.yml",'w+'){ |f| f.write(YAML::dump(data)) }
     def data.age=(seconds)
@@ -28,7 +34,7 @@ class Cache
     return data
   end
 
-  def load(options)
+  def load(options, &block)
     if self.active
       cache_timeout=options[:timeout]||@@cache_timeout
       log "caching is active !"
@@ -47,15 +53,15 @@ class Cache
           return data
         else
           log "refreshing data because the cached is older then the timeout (age : #{(Time.now-created_at).round}, timeout : #{cache_timeout})"
-          self.create(options)
+          self.create(options, &block)
         end
       else
-        log "no chache data found, calling create..."
-        create(options)
+        log "no cache data found, calling create..."
+        self.create(options, &block)
       end
     else
       log "cache disabled, fetching life data (and creating cache file for future use...once cache is enabled)"
-      self.create(options)
+      self.create(options, &block)
     end
   end
 
