@@ -316,20 +316,24 @@ class Fresnel
     if links.size == 0
       puts "No links found"
       sleep 1
-      show_ticket(number)
+    elsif links.size == 1
+      url = links.first
+      url="http://#{url}" unless url=~/^http/
+      `open '#{url}'`
+    else
+      link_table=table do |t|
+        t.headings=['#','link']
+        links.each_with_index{|link,i|t << [i,link]}
+      end
+      puts link_table
+      pick=ask("open link # : ", Integer) do |q|
+        q.below=links.size
+        q.above=-1
+      end
+      url=links[pick]
+      url="http://#{url}" unless url=~/^http/
+      `open '#{url}'`
     end
-    link_table=table do |t|
-      t.headings=['#','link']
-      links.each_with_index{|link,i|t << [i,link]}
-    end
-    puts link_table
-    pick=ask("open link # : ", Integer) do |q|
-      q.below=links.size
-      q.above=-1
-    end
-    url=links[pick]
-    url="http://#{url}" unless url=~/^http/
-    `open '#{url}'`
     show_ticket(number)
   end
 
