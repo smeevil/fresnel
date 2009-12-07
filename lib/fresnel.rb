@@ -8,6 +8,7 @@ require "fresnel/cache"
 require "fresnel/setup_wizard"
 require "fresnel/frame"
 require "fresnel/string"
+require "fresnel/input_detector"
 
 HighLine.track_eof = false
 
@@ -72,19 +73,6 @@ class Fresnel
     lighthouse.token
   end
 
-  def ask_for_action(actions_available="")
-    if actions_available.present?
-      puts actions_available.wrap
-      regexp="^(#{actions_available.scan(/\[(.*?)\]/).flatten.join("|")}|[0-9]+)$"
-    else
-      regexp="^(q|[0-9]+)$"
-    end
-    ask("Action : ") do |q|
-      q.default="q"
-      q.validate=/#{regexp}/
-    end
-  end
-
   def create_project
     puts "create project is not implemented yet"
   end
@@ -113,11 +101,13 @@ class Fresnel
     else
       puts(project_table)
       unless options[:setup]
-        action=ask_for_action("[q]uit, [c]reate or project #")
+        action=InputDetector.new("[q]uit, [c]reate or project #",(0..(projects_data.size-1)).to_a).answer
+        puts "action is #{action.inspect}"
         case action
           when "c" then create_project
           when /\d+/ then tickets(:project_id=>projects_data[action.to_i].id)
           else
+            puts "dont know what to do with #{action.inspect} class #{action.class}"
             exit(0)
         end
       end
@@ -162,7 +152,7 @@ class Fresnel
         end
       end
       puts tickets_table
-      action=ask_for_action("[q]uit, [b]ins, [p]rojects, #{options[:all] ? "[u]nresolved" : "[a]ll"}, [c]reate or ticket #")
+      action=InputDetector.new("[q]uit, [b]ins, [p]rojects, #{options[:all] ? "[u]nresolved" : "[a]ll"}, [c]reate or ticket #",tickets.map(&:number)).answer
       case action
         when "b" then get_bins
         when "c" then create
@@ -175,7 +165,7 @@ class Fresnel
       end
     else
       puts Frame.new(:header=>"Notice",:body=>"no #{"unresolved " unless options[:all]}tickets #{"in bin #{options[:bin_name]}"}...")
-      action=ask_for_action("[q]uit, [b]ins, [p]rojects, [u]nresolved, [a]ll, [c]reate")
+      action=InputDetector.new("[q]uit, [b]ins, [p]rojects, [u]nresolved, [a]ll, [c]reate").answer
       case action
         when "b" then get_bins
         when "c" then create
@@ -204,7 +194,7 @@ class Fresnel
       end
     end
     puts bins_table
-    bin_id=ask_for_action
+    bin_id=InputDetector.new("[q]uit or Bin #: ",(0..(bins.size-1)).to_a).answer
     if bin_id=="q"
        exit(0)
     else
@@ -288,7 +278,7 @@ class Fresnel
       end
     end
     puts "Current state : #{ticket.versions.last.state}"
-    action=ask_for_action("[q]uit, [t]ickets, [b]ins, [c]omment, [a]ssign, [r]esolve, [s]elf, [o]pen, [h]old, [w]eb, [l]inks")
+    action=InputDetector.new("[q]uit, [t]ickets, [b]ins, [c]omment, [a]ssign, [r]esolve, [s]elf, [o]pen, [h]old, [w]eb, [l]inks").answer
     case action
       when "t" then tickets
       when "b" then get_bins

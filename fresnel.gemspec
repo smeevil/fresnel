@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   # Files
   root_files     = %w[README.markdown Rakefile fresnel.gemspec]
   bin_files      = %w[fresnel]
-  fresnel_files  = %w[cache cli date_parser frame lighthouse setup_wizard string]
+  fresnel_files  = %w[cache cli date_parser frame lighthouse setup_wizard string input_detector]
   lib_files      = %w[fresnel] + fresnel_files.map {|f| "fresnel/#{f}"}
   s.bindir       = "bin"
   s.require_path = "lib"
