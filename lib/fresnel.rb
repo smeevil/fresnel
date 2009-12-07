@@ -415,9 +415,6 @@ class Fresnel
   end
 
   def open_browser_for_ticket(number)
-    #fast
-    #`open "https://#{self.account}.lighthouseapp.com/projects/#{self.current_project_id}/tickets/#{number}"`
-    #or save
     puts "opening ticket #{number}in browser"
     `open "#{get_ticket(number).url}"`
     show_ticket(number)
@@ -434,10 +431,8 @@ class Fresnel
         end
       end
       puts members_table
-      pick=ask("Assign to # : ",Integer) do |q|
-        q.above=-1
-        q.below=members.count
-      end
+      #here
+      pick=InputDetector.new("Assign to user # : ",((0..members.size)-1)).answer
       options[:user_id]=members[pick].user.id
     end
     ticket=get_ticket(options[:ticket])
@@ -449,6 +444,7 @@ class Fresnel
     else
       puts Frame.new(:header=>"Error",:body=>"assigning failed !")
     end
+    show_ticket(options[:ticket])
   end
 
   def claim(options)
@@ -459,6 +455,6 @@ class Fresnel
     else
       assign(:ticket=>options[:ticket],:user_id=>self.current_user_id)
     end
-
+    show_ticket(options[:ticket])
   end
 end

@@ -22,6 +22,7 @@ class InputDetector
       end
       print str.chr
       if str == 13
+        exit if collection.blank?
         possible_options = possible_answers.select{|option| option == collection}
       else
         self.collection+=str.chr
