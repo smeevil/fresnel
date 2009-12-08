@@ -314,10 +314,7 @@ class Fresnel
         links.each_with_index{|link,i|t << [i,link]}
       end
       puts link_table
-      pick=ask("open link # : ", Integer) do |q|
-        q.below=links.size
-        q.above=-1
-      end
+      pick=InputDetector.new("open link # : ", 0...links.size).answer
       url=links[pick]
       url="http://#{url}" unless url=~/^http/
       `open '#{url}'`

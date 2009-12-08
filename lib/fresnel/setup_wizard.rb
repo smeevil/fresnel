@@ -41,14 +41,9 @@ class SetupWizard
     data=fresnel.projects(:object=>true)
     current_dir=File.expand_path(".").split("/").last
     fresnel.projects(:selectable=>true, :clear=>false, :setup=>true)
-
-    project_id=ask("please select which project # resides here : ", Integer) do |q|
-       q.validate = /^\d+$/
-       q.below=data.size
-       q.responses[:ask_on_error]="This project is # : "
-     end
-     config['project_id']=data[project_id].id
-     puts "generated your config in #{fresnel.project_config_file}, going on with main program..."
-     File.open(fresnel.project_config_file,'w+'){ |f| f.write(YAML::dump(config)) }
+    project_id=InputDetector.new("please select which project # resides here : ", 0...data.size).answer
+    config['project_id']=data[project_id].id
+    puts "generated your config in #{fresnel.project_config_file}, going on with main program..."
+    File.open(fresnel.project_config_file,'w+'){ |f| f.write(YAML::dump(config)) }
   end
 end
