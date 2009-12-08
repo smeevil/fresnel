@@ -101,7 +101,7 @@ class Fresnel
     else
       puts(project_table)
       unless options[:setup]
-        action=InputDetector.new("[q]uit, [c]reate or project #",(0..(projects_data.size-1)).to_a).answer
+        action=InputDetector.new("[q]uit, [c]reate or project #",(0...projects_data.size).to_a).answer
         puts "action is #{action.inspect}"
         case action
           when "c" then create_project
@@ -197,7 +197,7 @@ class Fresnel
       end
     end
     puts bins_table
-    bin_id=InputDetector.new("[q]uit or Bin #: ",(0..(bins.size-1)).to_a).answer
+    bin_id=InputDetector.new("[q]uit or Bin #: ",(0...(bins.size).to_a).answer
     if bin_id=="q"
        exit(0)
     else
@@ -314,7 +314,7 @@ class Fresnel
         links.each_with_index{|link,i|t << [i,link]}
       end
       puts link_table
-      pick=InputDetector.new("open link # : ", 0...links.size).answer
+      pick=InputDetector.new("open link # : ", (0...links.size).to_a).answer
       url=links[pick]
       url="http://#{url}" unless url=~/^http/
       `open '#{url}'`
