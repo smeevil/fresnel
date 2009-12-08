@@ -168,7 +168,7 @@ class Fresnel
       end
     else
       puts Frame.new(:header=>"Notice",:body=>"no #{"unresolved " unless options[:all]}tickets #{"in bin #{options[:bin_name]}"}...")
-      action=InputDetector.new("[q]uit, [b]ins, [p]rojects, [u]nresolved, [a]ll, [c]reate").answer
+      action=InputDetector.pretty_prompt(:actions => %w[quit bins projects unresolved all create]).answer
       case action
         when "b" then get_bins
         when "c" then create
