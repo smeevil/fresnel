@@ -154,11 +154,14 @@ class Fresnel
       puts tickets_table
       action=InputDetector.new("[q]uit, [b]ins, [p]rojects, #{options[:all] ? "[u]nresolved" : "[a]ll"}, [c]reate , [r]efresh/[t]ickets or ticket # : ",tickets.map(&:number)).answer
       case action
+        when /t|r/ then 
+          cache.clear(:name=>"fresnel_project_#{project_id}_tickets")
+          self.tickets
         when "b" then get_bins
         when "c" then create
         when "p" then projects(:selectable=>true)
         when "a" then tickets(:all=>true)
-        when /u|t|r/ then self.tickets
+        when "u" then self.tickets
         when /\d+/ then show_ticket(action)
         else
           exit(0)
