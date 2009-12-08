@@ -197,7 +197,7 @@ class Fresnel
       end
     end
     puts bins_table
-    bin_id=InputDetector.new("[q]uit or Bin #: ",(0...(bins.size).to_a).answer
+    bin_id=InputDetector.new("[q]uit or Bin #: ",(0...(bins.size).to_a)).answer
     if bin_id=="q"
        exit(0)
     else
