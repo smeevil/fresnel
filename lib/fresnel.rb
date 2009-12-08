@@ -278,7 +278,7 @@ class Fresnel
       end
     end
     puts "Current state : #{ticket.versions.last.state}"
-    action=InputDetector.new("[q]uit, [t]ickets, [b]ins, [c]omment, [a]ssign, [r]esolve, [s]elf, [o]pen, [h]old, [w]eb, [l]inks").answer
+    action=InputDetector.new("[q]uit, [t]ickets, [b]ins, [c]omment, [a]ssign, [r]esolve, [s]elf, [o]pen, [h]old, [w]eb, [l]inks : ").answer
     case action
       when "t" then tickets
       when "b" then get_bins
@@ -326,6 +326,7 @@ class Fresnel
     puts "create comment for #{number}"
     ticket=get_ticket(number)
     File.open("/tmp/fresnel_ticket_#{number}_comment", "w+") do |f|
+      f.puts
       f.puts "# Please enter the comment for this ticket. Lines starting"
       f.puts "# with '#' will be ignored, and an empty message aborts the commit."
       `echo "q" | fresnel #{number}`.each{ |l| f.write "# #{l}" }
