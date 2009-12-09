@@ -319,7 +319,7 @@ class Fresnel
       end
       puts link_table
       pick=InputDetector.new("open link # : ", (0...links.size).to_a).answer
-      url=links[pick]
+      url=links[pick.to_i]
       url="http://#{url}" unless url=~/^http/
       `open '#{url}'`
     end
