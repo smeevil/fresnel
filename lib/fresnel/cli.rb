@@ -16,6 +16,8 @@ class Cli
         @fresnel.get_tickets_in_bin(ARGV[1])
       when "create"
         @fresnel.create
+      when "new"
+        @fresnel.create_project
       when "help"
         help
       when /\d+/
@@ -49,6 +51,7 @@ class Cli
 
   def help
     help = {
+      'new' => 'Create a new project',
       'projects' => 'Show all projects',
       'tickets' => 'Show all tickets',
       'bins' => 'Show all ticket bins',

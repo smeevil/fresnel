@@ -12,6 +12,18 @@ require "fresnel/input_detector"
 
 HighLine.track_eof = false
 
+LICENSES={
+  'mit' => "MIT License",
+  'apache-2-0' => "Apache License 2.0",
+  'artistic-gpl-2' => "Artistic License/GPLv2",
+  'gpl-2' => "GNU General Public License v2",
+  'gpl-3' => "GNU General Public License v3",
+  'lgpl' => "GNU Lesser General Public License",
+  'mozilla-1-1' => "Mozilla Public License 1.1",
+  'new-bsd' => "New BSD License",
+  'afl-3' => "Academic Free License v. 3.0"
+}.sort
+
 class Fresnel
   attr_reader :global_config_file, :project_config_file, :app_description
   attr_accessor :lighthouse, :current_project_id, :cache, :cache_timeout, :current_user_id
@@ -74,7 +86,34 @@ class Fresnel
   end
 
   def create_project
-    puts "create project is not implemented yet"
+    name=ask("Name of this project : ")
+    type=InputDetector.new("[p]rivate or [o]ss : ").answer
+    if type=="o"
+      row=Array.new
+      license_table = table do |t|
+        t.headings=['#' , 'license']
+        LICENSES.each_with_index do |lic,i|
+          t<<[i, lic.last]
+        end
+      end
+      puts license_table
+      license=InputDetector.new("License # : ",(0...LICENSES.size).to_a).answer
+      license=LICENSES[license.to_i].first
+    end
+    
+    puts "collected :"
+    puts "#{name} : #{license}"
+    project = Lighthouse::Project.new(:name => name)
+    if license.present?
+      project.access = 'oss'
+      project.license = license
+    end
+    puts "creating project on lighthouse..."
+    project.save
+    config=Hash.new
+    config['project_id']=project.id
+    File.open(self.project_config_file,'w+'){ |f| f.write(YAML::dump(config)) }
+    load_project_config
   end
 
   def projects(options=Hash.new)
