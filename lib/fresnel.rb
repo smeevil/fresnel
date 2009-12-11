@@ -193,7 +193,7 @@ class Fresnel
       puts tickets_table
       action=InputDetector.new("[q]uit, [b]ins, [p]rojects, #{options[:all] ? "[u]nresolved" : "[a]ll"}, [c]reate , [r]efresh/[t]ickets or ticket # : ",tickets.map(&:number)).answer
       case action
-        when /t|r/ then 
+        when /t|r/ then
           cache.clear(:name=>"fresnel_project_#{project_id}_tickets")
           self.tickets
         when "b" then get_bins
@@ -207,7 +207,7 @@ class Fresnel
       end
     else
       puts Frame.new(:header=>"Notice",:body=>"no #{"unresolved " unless options[:all]}tickets #{"in bin #{options[:bin_name]}"}...")
-      action=InputDetector.new("[q]uit, [b]ins, [p]rojects, [u]nresolved, [a]ll, [c]reate").answer
+      action=InputDetector.pretty_prompt(:actions => %w[quit bins projects unresolved all create]).answer
       case action
         when "b" then get_bins
         when "c" then create
@@ -236,7 +236,7 @@ class Fresnel
       end
     end
     puts bins_table
-    bin_id=InputDetector.new("[q]uit or Bin #: ",(0...(bins.size).to_a)).answer
+    bin_id=InputDetector.new("[q]uit or Bin #: ",(0...bins.size).to_a).answer
     if bin_id=="q"
        exit(0)
     else
@@ -320,18 +320,22 @@ class Fresnel
       end
     end
     puts "Current state : #{ticket.versions.last.state}"
-    action=InputDetector.new("[q]uit, [t]ickets, [b]ins, [c]omment, [a]ssign, [r]esolve, [s]elf, [o]pen, [h]old, [w]eb, [l]inks : ").answer
+    choices = {
+      :states => %w[open resolved invalid hold new],
+      :actions => %w[quit tickets bins comments assign self web links]
+    }
+    states = choices[:states]
+    action=InputDetector.pretty_prompt(choices).answer
     case action
       when "t" then tickets
       when "b" then get_bins
       when "c" then comment(number)
       when "a" then assign(:ticket=>number)
-      when "r" then change_state(:ticket=>number,:state=>"resolved")
       when "s" then claim(:ticket=>number)
-      when "o" then change_state(:ticket=>number,:state=>"open")
-      when "h" then change_state(:ticket=>number,:state=>"hold")
       when "w" then open_browser_for_ticket(number)
       when "l" then links(number)
+      when *(states.map{|state| state[0,1]})
+        change_state(:ticket=>number,:state=>states.find{|state| state[0,1] == action})
       else
         exit(0)
     end
@@ -354,7 +358,7 @@ class Fresnel
       end
       puts link_table
       pick=InputDetector.new("open link # : ", (0...links.size).to_a).answer
-      url=links[pick]
+      url=links[pick.to_i]
       url="http://#{url}" unless url=~/^http/
       `open '#{url}'`
     end
