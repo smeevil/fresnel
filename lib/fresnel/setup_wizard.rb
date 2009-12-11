@@ -35,7 +35,7 @@ class SetupWizard
     puts "generated your config in #{fresnel.global_config_file}, going on with main program..."
     File.open(fresnel.global_config_file,'w+'){ |f| f.write(YAML::dump(config)) }
   end
-  
+
   def self.project(fresnel)
     config=Hash.new
     data=fresnel.projects(:object=>true)
@@ -45,7 +45,7 @@ class SetupWizard
     if project_id=="c"
       fresnel.create_project
     else
-      config['project_id']=data[project_id].id
+      config['project_id']=data[project_id.to_i].id
       puts "generated your config in #{fresnel.project_config_file}, going on with main program..."
       File.open(fresnel.project_config_file,'w+'){ |f| f.write(YAML::dump(config)) }
     end
