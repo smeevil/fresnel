@@ -33,6 +33,7 @@ class SetupWizard
     end
 
     puts "generated your config in #{fresnel.global_config_file}, going on with main program..."
+    # TODO: Refactor GlobalConfig into its own object, responsible for loading and saving itself.
     File.open(fresnel.global_config_file,'w+'){ |f| f.write(YAML::dump(config)) }
   end
 
@@ -47,6 +48,7 @@ class SetupWizard
     else
       config['project_id']=data[project_id.to_i].id
       puts "generated your config in #{fresnel.project_config_file}, going on with main program..."
+      # TODO: Refactor ProjectConfig into its own object, responsible for loading and saving itself.
       File.open(fresnel.project_config_file,'w+'){ |f| f.write(YAML::dump(config)) }
     end
   end

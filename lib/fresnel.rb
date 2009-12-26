@@ -34,47 +34,56 @@ class Fresnel
     @app_description="A lighthouseapp console manager"
     @lighthouse=Lighthouse
     @cache=Cache.new
-    Lighthouse.account, Lighthouse.token, @current_user_id = load_global_config
-    @current_project_id=load_project_config
-
+    load_global_config
+    load_project_config
+    initialize_lighthouse
   end
 
   def load_global_config
-    if File.exists? self.global_config_file
-      config = YAML.load_file(self.global_config_file)
-
-      @@cache_timeout=config['cache_timeout'] if config.has_key?('cache_timeout')
-      @@debug=config['debug'] if config.has_key?('debug')
-      @@term_size=config['term_size'] if config.has_key?('term_size')
-
-      if config && config.class==Hash && config.has_key?('account') && config.has_key?('token') && config.has_key?('user_id')
-        return [config['account'], config['token'], config['user_id']]
-      else
-        puts Frame.new(:header=>"Warning !",:body=>"global config did not validate , recreating")
-        SetupWizard.global(self)
-        load_global_config
-      end
-    else
+    unless File.exists? self.global_config_file
       puts Frame.new(:header=>"Notice",:body=>"global config not found at #{self.global_config_file}, starting wizard")
       SetupWizard.global(self)
-      load_global_config
+      return load_global_config
     end
+
+    config = YAML.load_file(self.global_config_file)
+
+    @@cache_timeout=config['cache_timeout'] if config.has_key?('cache_timeout')
+    @@debug=config['debug'] if config.has_key?('debug')
+    @@term_size=config['term_size'] if config.has_key?('term_size')
+
+    unless config && config.class==Hash && config.has_key?('account') && config.has_key?('token') && config.has_key?('user_id')
+      puts Frame.new(:header=>"Warning !",:body=>"global config did not validate , recreating")
+      SetupWizard.global(self)
+      return load_global_config
+    end
+
+    @lighthouse_account = config['account']
+    @lighthouse_token = config['token']
+    @current_user_id = config['user_id']
+    nil
+  end
+
+  def initialize_lighthouse
+    @lighthouse.account = @lighthouse_account
+    @lighthouse.token = @lighthouse_token
+    nil
   end
 
   def load_project_config
-    if File.exists? self.project_config_file
-      config = YAML.load_file(self.project_config_file)
-      if config && config.class==Hash && config.has_key?('project_id')
-        return config['project_id']
-      else
-        puts Frame.new(:header=>"Warning !",:body=>"project config found but project_id was not declared")
-        load_project_config
-      end
-    else
+    unless File.exists? self.project_config_file
       puts Frame.new(:header=>"Notice",:body=>"project config not found at #{self.project_config_file}, starting wizard")
       SetupWizard.project(self)
-      load_project_config
+      return load_project_config
     end
+
+    config = YAML.load_file(self.project_config_file) || Hash.new
+    unless config['project_id']
+      puts Frame.new(:header=>"Warning !",:body=>"project config found but project_id was not declared")
+      return load_project_config
+    end
+    @current_project_id = config['project_id']
+    nil
   end
 
   def account
@@ -100,7 +109,7 @@ class Fresnel
       license=InputDetector.new("License # : ",(0...LICENSES.size).to_a).answer
       license=LICENSES[license.to_i].first
     end
-    
+
     puts "collected :"
     puts "#{name} : #{license}"
     project = Lighthouse::Project.new(:name => name)
