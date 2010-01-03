@@ -9,6 +9,6 @@ class String
   end
   
   def scrape_urls
-    scan(/(http|https)(:\/\/)([a-zA-Z0-9.\/_-]+)| (www\.[a-zA-Z0-9.\/_-]+)/).map{ |url| url.join}
+    scan(/(http|https)(:\/\/)([a-zA-Z0-9.\/_-]+\?[&=a-zA-Z0-9.\/_-]+)| (www\.[a-zA-Z0-9.\/_-]+)/).map{ |url| url.join}
   end
 end
