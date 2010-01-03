@@ -304,7 +304,7 @@ class Fresnel
     ticket = get_ticket(number)
     puts Frame.new(
       :header=>[
-        "Ticket ##{number} : #{ticket.title.chomp.truncate(55)}",
+        "Ticket ##{number} : #{ticket.title.chomp.truncate(@@term_size-5)}",
         "Date : #{DateParser.string(ticket.created_at.to_s)} by #{ticket.creator_name}",
         "Tags : #{ticket.tag}"
       ],
