@@ -332,7 +332,7 @@ class Fresnel
     puts "Current state : #{ticket.versions.last.state}"
     choices = {
       :states => %w[open resolved invalid hold new],
-      :actions => %w[quit tickets bins comments assign self web links]
+      :actions => %w[quit tickets bins comments assign self web links errors]
     }
     states = choices[:states]
     action=InputDetector.pretty_prompt(choices).answer
@@ -344,6 +344,7 @@ class Fresnel
       when "s" then claim(:ticket=>number)
       when "w" then open_browser_for_ticket(number)
       when "l" then links(number)
+      when "e" then errors(number)
       when *(states.map{|state| state[0,1]})
         change_state(:ticket=>number,:state=>states.find{|state| state[0,1] == action})
       else
@@ -375,6 +376,30 @@ class Fresnel
     show_ticket(number)
   end
 
+  def errors(number)
+    ticket = get_ticket(number)
+    errors = ticket.versions.map{ |version| version.body.to_s.scrape_textmate_links }.flatten
+    if errors.size == 0
+      puts "No errors found"
+      sleep 1
+    elsif errors.size == 1
+      error=errors.first
+      error=~/(.*?):(\d+)/
+      `mate -l #{$2} #{File.expand_path(".")}#{$1.gsub(/^\./,"")}`
+    else
+      error_table=table do |t|
+        t.headings=['#','error']
+        errors.each_with_index{|error,i|t << [i,error]}
+      end
+      puts error_table
+      pick=InputDetector.new("open error # : ", (0...errors.size).to_a).answer
+      error=errors[pick.to_i]
+      error=~/(.*?):(\d+)/
+      `mate -l #{$2} #{File.expand_path(".")}#{$1.gsub(/^\./,"")}`
+    end
+    show_ticket(number)
+  end
+  
   def comment(number,state=nil)
     puts "create comment for #{number}"
     ticket=get_ticket(number)

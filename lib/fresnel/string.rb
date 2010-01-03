@@ -11,4 +11,8 @@ class String
   def scrape_urls
     scan(/(http|https)(:\/\/)([a-zA-Z0-9.\/_-]+\?[&=a-zA-Z0-9.\/_-]+)| (www\.[a-zA-Z0-9.\/_-]+)/).map{ |url| url.join}
   end
+  
+  def scrape_textmate_links
+    scan(/(\.?\/.*?\.rb:\d+):in/)
+  end
 end
