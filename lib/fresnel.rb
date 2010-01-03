@@ -51,8 +51,8 @@ class Fresnel
     @@cache_timeout=config['cache_timeout'] if config.has_key?('cache_timeout')
     @@debug=config['debug'] if config.has_key?('debug')
     @@term_size=config['term_size'] if config.has_key?('term_size')
-
-    unless config && config.class==Hash && config.has_key?('account') && config.has_key?('token') && config.has_key?('user_id')
+    @@tags=config['tags']
+    unless config && config.class==Hash && config.has_key?('account') && config.has_key?('token') && config.has_key?('user_id')  && config.has_key?('tags')
       puts Frame.new(:header=>"Warning !",:body=>"global config did not validate , recreating")
       SetupWizard.global(self)
       return load_global_config
@@ -448,16 +448,30 @@ class Fresnel
           body << l
         end
         body=body.to_s
-        tags=ask("Tags : ")
+        tags=ask("Tags #{@@tags.join(",")} : ")
         tags=tags.split(" ")
+        expanded_tags=[]
+        tags.each do |tag|
+          match=false
+          if tag.length==1
+            @@tags.each do |predefined_tag|
+              if predefined_tag=~/\[#{tag}\]/
+                match=true
+                expanded_tags<<predefined_tag.gsub(/\[|\]/,"")
+              end
+            end
+          end
+          expanded_tags<<tag unless match
+        end
       end
+      puts "tags are #{expanded_tags.inspect}"
       puts "creating ticket..."
       ticket = Lighthouse::Ticket.new(
         :project_id=>self.current_project_id,
         :title=>title,
         :body=>body
       )
-      ticket.tags=tags
+      ticket.tags=expanded_tags
       if ticket.save
         File.delete("/tmp/fresnel_new_ticket")
         show_ticket(ticket.number)

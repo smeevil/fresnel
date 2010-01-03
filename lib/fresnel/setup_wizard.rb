@@ -31,7 +31,14 @@ class SetupWizard
     config['user_id']=ask("My lighthouse user_id is : ", Integer) do |q|
       q.default=user_id
     end
-
+    
+    puts "What are your commonly used tags ?"
+    puts "Please write them down like : [l]ow [m]edium [h]igh awe[s]ome"
+    puts "When adding tags you can give something like : special s design h"
+    puts "this will be expanded to : special awesome design high"
+    tags=ask("Tags : ")
+    config['tags']=tags.split(" ")
+    
     puts "generated your config in #{fresnel.global_config_file}, going on with main program..."
     # TODO: Refactor GlobalConfig into its own object, responsible for loading and saving itself.
     File.open(fresnel.global_config_file,'w+'){ |f| f.write(YAML::dump(config)) }
