@@ -485,9 +485,8 @@ class Fresnel
         end
       end
       puts members_table
-      #here
-      pick=InputDetector.new("Assign to user # : ",((0..members.size)-1)).answer
-      options[:user_id]=members[pick].user.id
+      pick=InputDetector.new("Assign to user # : ",((0...members.size).to_a)).answer
+      options[:user_id]=members[pick.to_i].user.id
     end
     ticket=get_ticket(options[:ticket])
     ticket.assigned_user_id=options[:user_id]

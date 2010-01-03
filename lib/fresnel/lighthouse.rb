@@ -382,5 +382,3 @@ module ActiveResource
       end
   end
 end
-
-
