@@ -166,6 +166,7 @@ class Fresnel
     system("clear")
     options[:all] ? print("Fetching all tickets#{" in bin #{options[:bin_name]}" if options[:bin_name].present?}...") : print("Fetching unresolved tickets#{" in bin #{options[:bin_name]}" if options[:bin_name].present?}...")
     STDOUT.flush
+    @current_project_id=options[:project_id]||self.current_project_id
     project_id=options[:project_id]||self.current_project_id
     tickets=options[:tickets]||cache.load(:name=>"fresnel_project_#{project_id}_tickets#{"_all" if options[:all]}", :action=>"Lighthouse::Ticket.find(:all, :params=>{:project_id=>#{project_id} #{",:q=>'not-state:closed'" unless options[:all]}})")
     puts " [done] - data is #{tickets.age}s old , max is #{@@cache_timeout}s"
