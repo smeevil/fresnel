@@ -36,7 +36,6 @@ class Fresnel
     @cache=Cache.new
     load_global_config
     load_project_config
-    initialize_lighthouse
   end
 
   def load_global_config
@@ -52,15 +51,20 @@ class Fresnel
     @@debug=config['debug'] if config.has_key?('debug')
     @@term_size=config['term_size'] if config.has_key?('term_size')
     @@tags=config['tags']
-    unless config && config.class==Hash && config.has_key?('account') && config.has_key?('token') && config.has_key?('user_id')  && config.has_key?('tags')
+    @@default_account=config['default_account']
+    @@accounts=config['accounts']
+    
+    
+    unless config && config.class==Hash && config.has_key?('default_account') && config.has_key?('user_id')  && config.has_key?('tags')
       puts Frame.new(:header=>"Warning !",:body=>"global config did not validate , recreating")
       SetupWizard.global(self)
       return load_global_config
     end
 
-    @lighthouse_account = config['account']
-    @lighthouse_token = config['token']
+    @lighthouse_account = config['accounts'][@@default_account]['account']
+    @lighthouse_token = config['accounts'][@@default_account]['token']
     @current_user_id = config['user_id']
+    initialize_lighthouse
     nil
   end
 
@@ -82,14 +86,16 @@ class Fresnel
       puts Frame.new(:header=>"Warning !",:body=>"project config found but project_id was not declared")
       return load_project_config
     end
+    if config.has_key?('account_name')
+      @lighthouse_account = @@accounts[config['account_name']]['account']
+      @lighthouse_token = @@accounts[config['account_name']]['token']
+    end
     @current_project_id = config['project_id']
-    @lighthouse_account = config['account'] if config.has_key?('account')
-    @lighthouse_token = config['token'] if config.has_key?('token')
     @@tags=config['tags'] if config.has_key?('tags')
     @@cache_timeout=config['cache_timeout'] if config.has_key?('cache_timeout')
     @@debug=config['debug'] if config.has_key?('debug')
     @@term_size=config['term_size'] if config.has_key?('term_size')
-    
+    initialize_lighthouse
     nil
   end
 
@@ -136,33 +142,64 @@ class Fresnel
     options[:object]||=false
     system("clear") unless options[:clear]==false || options[:object]
     options[:selectable]||false
-    print "Fetching projects..." unless options[:object]
-    projects_data=cache.load(:name=>"fresnel_projects",:action=>"Lighthouse::Project.find(:all)")
-    puts " [done] - data is #{projects_data.age}s old , max is #{@@cache_timeout}s"
+    projects_data=Hash.new
+    project_ids=Array.new
+    if @@accounts.size>1
+      print "Fetching projects from multiple accounts : " unless options[:object]
+      @@accounts.each do |key,value|
+        print "#{key} "
+        STDOUT.flush
+        Lighthouse.account=value['account']
+        Lighthouse.token=value['token']
+        projects_data[Lighthouse.account]=Lighthouse::Project.find(:all)
+      end
+      puts " [done]"
+    else
+      print "Fetching projects..." unless options[:object]
+      #projects_data=cache.load(:name=>"fresnel_projects"){Lighthouse::Project.find(:all)} #no cache for now
+      projects_data[Lighthouse.account]=Lighthouse::Project.find(:all)
+      puts " [done]"
+    end
+    
+    #puts " [done] - data is #{projects_data.age}s old , max is #{@@cache_timeout}s" #no cache for now
     project_table = table do |t|
       t.headings=[]
       t.headings << '#' if options[:selectable]
-      t.headings += ['project name', 'public', 'open tickets']
-
-      projects_data.each_with_index do |project,i|
-        row=Array.new
-        row << i if options[:selectable]
-        row+=[project.name, project.public, {:value=>project.open_tickets_count, :alignment=>:right}]
-        t << row
-      end
+      t.headings += ["account"] if @@accounts.size>1
+      t.headings += [ 'project name', 'public', 'open tickets']
+      i=0
+      projects_data.each do |key,value|
+        value.each do |project|
+          row=Array.new
+          row << i if options[:selectable]
+          project_ids<<"#{project.id};#{key}"
+          row+=[key] if @@accounts.size>1
+          row+=[project.name, project.public, {:value=>project.open_tickets_count, :alignment=>:right}]
+          t << row
+          i+=1
+        end
+      end        
     end
     if options[:object]
+      projects_data[:project_ids]=project_ids
       return projects_data
     else
       puts(project_table)
       unless options[:setup]
-        action=InputDetector.new("[q]uit, [c]reate or project #",(0...projects_data.size).to_a).answer
+        action=InputDetector.new("[q]uit, [c]reate or project #",(0..project_ids.size).to_a).answer
         puts "action is #{action.inspect}"
         case action
           when "c" then create_project
-          when /\d+/ then tickets(:project_id=>projects_data[action.to_i].id)
+          when /\d+/ then 
+            project_ids[action.to_i]=~/(\d+);(\w+)/
+            project_id=$1
+            account=$2
+            
+            Lighthouse.account=@@accounts[account]["account"]
+            Lighthouse.token=@@accounts[account]["token"]
+            
+            tickets(:project_id=>project_id)
           else
-            puts "dont know what to do with #{action.inspect} class #{action.class}"
             exit(0)
         end
       end
@@ -555,5 +592,28 @@ class Fresnel
       assign(:ticket=>options[:ticket],:user_id=>self.current_user_id)
     end
     show_ticket(options[:ticket])
+  end
+  
+  def create_extra_account
+    config=YAML::load_file(self.global_config_file)
+    
+    puts "should add an extra account !"
+    config['account']=ask("My extra lighthouse account is : ") do |q|
+      q.validate = /^\w+$/
+      q.responses[:not_valid]="\nError :\nThat seems to be incorrect, we would like to have the <account> part in\nhttp://<account>.lighthouseapp.com , please try again"
+      q.responses[:ask_on_error]="My extra account is : "
+    end
+    
+    config['accounts'][config['account']]={'account'=>config['account']}
+    puts
+    puts "what token would you like to use for the account : #{config['account']} ?"
+    config['accounts'][config['account']]['token']=ask("My lighthouse token is : ") do |q|
+      q.validate = /^[0-9a-f]{40}$/
+      q.responses[:not_valid]="\nError :\nThat seems to be incorrect, we would like to have your lighthouse token\n this looks something like : 1bd25cc2bab1fc4384b7edfe48433fba5f6ee43c"
+      q.responses[:ask_on_error]="My lighthouse token is : "
+      q.default=config['token'] if config['token']
+    end
+    File.open(self.global_config_file,'w+'){ |f| f.write(YAML::dump(config)) }
+    load_global_config
   end
 end
