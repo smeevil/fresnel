@@ -1,4 +1,4 @@
-require 'active_support'
+%w(activesupport active_support).each { |l| require l rescue nil }
 require 'terminal-table/import'
 require 'highline/import'
 
