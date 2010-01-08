@@ -139,6 +139,7 @@ class Fresnel
   end
 
   def projects(options=Hash.new)
+    system("clear")
     options[:object]||=false
     system("clear") unless options[:clear]==false || options[:object]
     options[:selectable]||false
