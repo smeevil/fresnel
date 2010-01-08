@@ -82,8 +82,8 @@ class Fresnel
     end
 
     config = YAML.load_file(self.project_config_file) || Hash.new
-    unless config['project_id']
-      puts Frame.new(:header=>"Warning !",:body=>"project config found but project_id was not declared")
+    unless config.has_key?('project_id') && config.has_key?('account_name')
+      puts Frame.new(:header=>"Warning !",:body=>"project config found but did not validate, recreating ")
       return load_project_config
     end
     if config.has_key?('account_name')
