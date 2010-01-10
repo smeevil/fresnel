@@ -325,6 +325,7 @@ class Fresnel
   end
 
   def get_tickets_in_bin(bin)
+    self.bin=bin.to_i
     bins=cache.load(:name=>"fresnel_project_#{self.current_project_id}_bins",:action=>"Lighthouse::Project.find(#{self.current_project_id}).bins")
     bins.reject!{|b|true unless b.user_id==self.current_user_id || b.shared}
     data=bins[bin.to_i].tickets
