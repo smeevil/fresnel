@@ -334,7 +334,7 @@ class Fresnel
   end
 
   def get_ticket(number)
-    cache.load(:name=>"fresnel_ticket_#{number}",:action=>"Lighthouse::Ticket.find(#{number}, :params => { :project_id => #{self.current_project_id} })")
+    cache.load(:name=>"fresnel_#{self.current_project_id}_ticket_#{number}",:action=>"Lighthouse::Ticket.find(#{number}, :params => { :project_id => #{self.current_project_id} })")
   end
 
   def get_project(project_id=self.current_project_id)
