@@ -140,6 +140,8 @@ module Lighthouse
   #   project.tickets
   #
   class Project < Base
+    attr_accessor :nr_of_open_tickets_assigned_to_me
+    
     def tickets(options = {})
       Ticket.find(:all, :params => options.update(:project_id => id))
     end

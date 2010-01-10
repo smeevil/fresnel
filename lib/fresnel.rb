@@ -152,22 +152,25 @@ class Fresnel
         STDOUT.flush
         Lighthouse.account=value['account']
         Lighthouse.token=value['token']
-        projects_data[Lighthouse.account]=Lighthouse::Project.find(:all)
+        projects=Lighthouse::Project.find(:all)
+        projects.each{|project|project.nr_of_open_tickets_assigned_to_me=Lighthouse::Ticket.find(:all, :params=>{:project_id=>project.id, :q=>'responsible:me state:open'}).size}
+        projects_data[Lighthouse.account]=projects
       end
       puts " [done]"
     else
       print "Fetching projects..." unless options[:object]
       #projects_data=cache.load(:name=>"fresnel_projects"){Lighthouse::Project.find(:all)} #no cache for now
-      projects_data[Lighthouse.account]=Lighthouse::Project.find(:all)
+      projects=Lighthouse::Project.find(:all)
+      projects.each{|project|project.nr_of_open_tickets_assigned_to_me=Lighthouse::Ticket.find(:all, :params=>{:project_id=>project.id, :q=>'responsible:me state:open'}).size}
+      projects_data[Lighthouse.account]=projects
       puts " [done]"
     end
-    
     #puts " [done] - data is #{projects_data.age}s old , max is #{@@cache_timeout}s" #no cache for now
     project_table = table do |t|
       t.headings=[]
       t.headings << '#' if options[:selectable]
       t.headings += ["account"] if @@accounts.size>1
-      t.headings += [ 'project name', 'public', 'open tickets']
+      t.headings += [ 'project name', 'public', 'open tickets', 'assigned to you']
       i=0
       projects_data.each do |key,value|
         value.each do |project|
@@ -175,7 +178,7 @@ class Fresnel
           row << i if options[:selectable]
           project_ids<<"#{project.id};#{key}"
           row+=[key] if @@accounts.size>1
-          row+=[project.name, project.public, {:value=>project.open_tickets_count, :alignment=>:right}]
+          row+=[project.name, project.public, {:value=>project.open_tickets_count, :alignment=>:right}, {:value=>project.nr_of_open_tickets_assigned_to_me, :alignment=>:right}]
           t << row
           i+=1
         end
