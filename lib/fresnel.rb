@@ -26,7 +26,7 @@ LICENSES={
 
 class Fresnel
   attr_reader :global_config_file, :project_config_file, :app_description
-  attr_accessor :lighthouse, :current_project_id, :cache, :cache_timeout, :current_user_id
+  attr_accessor :lighthouse, :current_project_id, :cache, :cache_timeout, :current_user_id, :bin
 
   def initialize(options=Hash.new)
     @global_config_file="#{ENV['HOME']}/.fresnel"
@@ -209,6 +209,8 @@ class Fresnel
 
   def tickets(options=Hash.new)
     system("clear")
+    get_tickets_in_bin(self.bin) unless self.bin.blank? || options[:tickets].present?
+    
     options[:all] ? print("Fetching all tickets#{" in bin #{options[:bin_name]}" if options[:bin_name].present?}...") : print("Fetching unresolved tickets#{" in bin #{options[:bin_name]}" if options[:bin_name].present?}...")
     STDOUT.flush
     @current_project_id=options[:project_id]||self.current_project_id
@@ -296,6 +298,8 @@ class Fresnel
        exit(0)
     else
       puts "Fetching tickets in bin : #{bins[bin_id.to_i].name}"
+      self.bin=bin_id.to_i
+      
       data=bins[bin_id.to_i].tickets
 
       def data.age=(seconds)
