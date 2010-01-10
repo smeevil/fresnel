@@ -377,11 +377,12 @@ class Fresnel
     puts "Current state : #{ticket.versions.last.state}"
     choices = {
       :states => %w[open resolved invalid hold new],
-      :actions => %w[quit tickets bins comments assign self web links errors]
+      :actions => %w[quit tickets bins comments assign self web links errors Tag]
     }
     states = choices[:states]
     action=InputDetector.pretty_prompt(choices).answer
     case action
+      when "T" then tag(:ticket=>number)
       when "t" then tickets
       when "b" then get_bins
       when "c" then comment(number)
@@ -476,6 +477,30 @@ class Fresnel
     end
   end
 
+  def tag(options)
+    ticket=get_ticket(options[:ticket])
+    tags=ask("Tags #{@@tags.join(", ")} : ")
+    tags=tags.split(" ")
+    expanded_tags=[]
+    tags.each do |tag|
+      match=false
+      if tag.length==1
+        @@tags.each do |predefined_tag|
+          if predefined_tag=~/\[#{tag}\]/
+            match=true
+            expanded_tags<<predefined_tag.gsub(/\[|\]/,"")
+          end
+        end
+      end
+      expanded_tags<<tag unless match
+    end
+    puts "tags are #{expanded_tags.inspect}"
+    ticket.tags=expanded_tags
+    ticket.save
+    tickets
+  end
+  
+  
   def create
     system("mate -w /tmp/fresnel_new_ticket")
     if File.exists?("/tmp/fresnel_new_ticket")
@@ -493,7 +518,7 @@ class Fresnel
           body << l
         end
         body=body.to_s
-        tags=ask("Tags #{@@tags.join(",")} : ")
+        tags=ask("Tags #{@@tags.join(", ")} : ")
         tags=tags.split(" ")
         expanded_tags=[]
         tags.each do |tag|
