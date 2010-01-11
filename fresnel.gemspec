@@ -3,7 +3,7 @@ Gem::Specification.new do |s|
   s.name         = 'fresnel'
   s.summary      = "Fresnel is a console manager to LighthouseApp.com using the official lighthouse api."
   s.description  = s.summary
-  s.version      = '0.6.6'
+  s.version      = '0.6.7'
   s.date         = '2010-01-11'
   s.platform     = Gem::Platform::RUBY
   s.authors      = ["Gerard de Brieder", "Wes Oldenbeuving"]
