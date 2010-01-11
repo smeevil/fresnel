@@ -52,3 +52,8 @@ desc 'Local install the latest gem version'
 task :reinstall do
   system("rm -f pkg/*.gem && rake gem && gem install pkg/*.gem")
 end
+
+desc 'Uninstall all Fresnel versions and install the latest gem version'
+task :upgrade do
+  system("gem uninstall -a -x fresnel && rm -f pkg/*.gem && rake gem && gem install pkg/*.gem")
+end
