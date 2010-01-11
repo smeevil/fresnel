@@ -93,7 +93,8 @@ class Fresnel
       @lighthouse_token = @@accounts[config['account_name']]['token']
     end
     @current_project_id = config['project_id']
-    @@tags=config['tags'] if config.has_key?('tags')
+    @@tags+=config['tags'] if config.has_key?('tags')
+    @@tags.uniq!
     @@cache_timeout=config['cache_timeout'] if config.has_key?('cache_timeout')
     @@debug=config['debug'] if config.has_key?('debug')
     @@term_size=config['term_size'] if config.has_key?('term_size')
