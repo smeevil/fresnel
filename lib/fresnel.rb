@@ -53,8 +53,8 @@ class Fresnel
     @@tags=config['tags']
     @@default_account=config['default_account']
     @@accounts=config['accounts']
-    
-    
+
+
     unless config && config.class==Hash && config.has_key?('default_account') && config.has_key?('user_id')  && config.has_key?('tags')
       puts Frame.new(:header=>"Warning !",:body=>"global config did not validate , recreating")
       SetupWizard.global(self)
@@ -146,26 +146,30 @@ class Fresnel
     options[:selectable]||false
     projects_data=Hash.new
     project_ids=Array.new
-    if @@accounts.size>1
-      print "Fetching projects from multiple accounts : " unless options[:object]
-      @@accounts.each do |key,value|
-        print "#{key} "
-        STDOUT.flush
-        Lighthouse.account=value['account']
-        Lighthouse.token=value['token']
-        projects=Lighthouse::Project.find(:all)
-        projects.each{|project|project.nr_of_open_tickets_assigned_to_me=Lighthouse::Ticket.find(:all, :params=>{:project_id=>project.id, :q=>'responsible:me state:open'}).size}
-        projects_data[Lighthouse.account]=projects
-      end
-      puts " [done]"
-    else
-      print "Fetching projects..." unless options[:object]
-      #projects_data=cache.load(:name=>"fresnel_projects"){Lighthouse::Project.find(:all)} #no cache for now
-      projects=Lighthouse::Project.find(:all)
-      projects.each{|project|project.nr_of_open_tickets_assigned_to_me=Lighthouse::Ticket.find(:all, :params=>{:project_id=>project.id, :q=>'responsible:me state:open'}).size}
+
+    print "Fetching projects from multiple accounts : " unless options[:object]
+    warnings = []
+    @@accounts.each do |key,value|
+      print "#{key} "
+      STDOUT.flush
+      Lighthouse.account=value['account']
+      Lighthouse.token=value['token']
+      projects=Lighthouse::Project.find(:all).map {| project|
+        begin
+          project.nr_of_open_tickets_assigned_to_me = Lighthouse::Ticket.find(:all, :params=>{:project_id=>project.id, :q=>'responsible:me state:open'}).size
+        rescue ActiveResource::UnauthorizedAccess => e
+          warnings << [project.name, key]
+          next nil
+        end
+        project
+      }.compact
       projects_data[Lighthouse.account]=projects
-      puts " [done]"
     end
+    puts " [done]"
+    warnings.each do |project_name, account_name|
+      puts "Warning:: Token does not give access to project #{project_name} on account #{account_name}."
+    end
+
     #puts " [done] - data is #{projects_data.age}s old , max is #{@@cache_timeout}s" #no cache for now
     project_table = table do |t|
       t.headings=[]
@@ -183,7 +187,7 @@ class Fresnel
           t << row
           i+=1
         end
-      end        
+      end
     end
     if options[:object]
       projects_data[:project_ids]=project_ids
@@ -195,14 +199,14 @@ class Fresnel
         puts "action is #{action.inspect}"
         case action
           when "c" then create_project
-          when /\d+/ then 
+          when /\d+/ then
             project_ids[action.to_i]=~/(\d+);(\w+)/
             project_id=$1
             account=$2
-            
+
             Lighthouse.account=@@accounts[account]["account"]
             Lighthouse.token=@@accounts[account]["token"]
-            
+
             tickets(:project_id=>project_id)
           else
             exit(0)
@@ -214,7 +218,7 @@ class Fresnel
   def tickets(options=Hash.new)
     system("clear")
     get_tickets_in_bin(self.bin) unless self.bin.blank? || options[:tickets].present?
-    
+
     options[:all] ? print("Fetching all tickets#{" in bin #{options[:bin_name]}" if options[:bin_name].present?}...") : print("Fetching unresolved tickets#{" in bin #{options[:bin_name]}" if options[:bin_name].present?}...")
     STDOUT.flush
     @current_project_id=options[:project_id]||self.current_project_id
@@ -303,7 +307,7 @@ class Fresnel
     else
       puts "Fetching tickets in bin : #{bins[bin_id.to_i].name}"
       self.bin=bin_id.to_i
-      
+
       data=bins[bin_id.to_i].tickets
 
       def data.age=(seconds)
@@ -454,7 +458,7 @@ class Fresnel
     end
     show_ticket(number)
   end
-  
+
   def comment(number,state=nil)
     puts "create comment for #{number}"
     ticket=get_ticket(number)
@@ -508,8 +512,8 @@ class Fresnel
     ticket.save
     tickets
   end
-  
-  
+
+
   def create
     system("mate -w /tmp/fresnel_new_ticket")
     if File.exists?("/tmp/fresnel_new_ticket")
@@ -628,17 +632,17 @@ class Fresnel
     end
     show_ticket(options[:ticket])
   end
-  
+
   def create_extra_account
     config=YAML::load_file(self.global_config_file)
-    
+
     puts "should add an extra account !"
     config['account']=ask("My extra lighthouse account is : ") do |q|
       q.validate = /^\w+$/
       q.responses[:not_valid]="\nError :\nThat seems to be incorrect, we would like to have the <account> part in\nhttp://<account>.lighthouseapp.com , please try again"
       q.responses[:ask_on_error]="My extra account is : "
     end
-    
+
     config['accounts'][config['account']]={'account'=>config['account']}
     puts
     puts "what token would you like to use for the account : #{config['account']} ?"
