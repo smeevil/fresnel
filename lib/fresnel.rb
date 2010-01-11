@@ -34,6 +34,7 @@ class Fresnel
     @app_description="A lighthouseapp console manager"
     @lighthouse=Lighthouse
     @cache=Cache.new
+    Cache.clear_all
     load_global_config
     load_project_config
   end
@@ -458,7 +459,7 @@ class Fresnel
   def comment(number,state=nil)
     puts "create comment for #{number}"
     ticket=get_ticket(number)
-    File.open("/tmp/fresnel_ticket_#{number}_comment", "w+") do |f|
+    File.open("/tmp/fresnel_ticket_#{number}_comment", "w") do |f|
       f.puts
       f.puts "# Please enter the comment for this ticket. Lines starting"
       f.puts "# with '#' will be ignored, and an empty message aborts the commit."
@@ -477,6 +478,7 @@ class Fresnel
       ticket.body=body
       ticket.state=state unless state.nil?
       if ticket.save
+        system("rm /tmp/fresnel_ticket_#{number}_comment")
         cache.clear(:name=>"fresnel_ticket_#{number}")
         show_ticket(number)
       else

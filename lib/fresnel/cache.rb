@@ -4,6 +4,11 @@ class Cache
   def initialize(options=Hash.new)
     @active=options[:active]||true
   end
+  
+  def self.clear_all
+    `rm -rf /tmp/fresnel*`
+  end
+  
   def timeout
     @@cache_timeout
   end
