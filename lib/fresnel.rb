@@ -464,15 +464,15 @@ class Fresnel
   def comment(number,state=nil)
     puts "create comment for #{number}"
     ticket=get_ticket(number)
-    File.open("/tmp/fresnel_ticket_#{number}_comment", "w") do |f|
+    File.open("/tmp/fresnel_#{self.current_project_id}_ticket_#{number}_comment", "w") do |f|
       f.puts
       f.puts "# Please enter the comment for this ticket. Lines starting"
       f.puts "# with '#' will be ignored, and an empty message aborts the commit."
       `echo "q" | fresnel #{number}`.each{ |l| f.write "# #{l}" }
     end
-    system("mate -w /tmp/fresnel_ticket_#{number}_comment")
+    system("mate -w /tmp/fresnel_#{self.current_project_id}_ticket_#{number}_comment")
     body=Array.new
-    File.read("/tmp/fresnel_ticket_#{number}_comment").each do |l|
+    File.read("/tmp/fresnel_#{self.current_project_id}_ticket_#{number}_comment").each do |l|
       body << l unless l=~/^#/
     end
 
@@ -483,8 +483,8 @@ class Fresnel
       ticket.body=body
       ticket.state=state unless state.nil?
       if ticket.save
-        system("rm /tmp/fresnel_ticket_#{number}_comment")
-        cache.clear(:name=>"fresnel_ticket_#{number}")
+        system("rm /tmp/fresnel_#{self.current_project_id}_ticket_#{number}_comment")
+        cache.clear(:name=>"fresnel_#{self.current_project_id}_ticket_#{number}")
         show_ticket(number)
       else
         puts "something went wrong"

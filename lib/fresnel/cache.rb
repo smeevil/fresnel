@@ -6,7 +6,7 @@ class Cache
   end
   
   def self.clear_all
-    `rm -rf /tmp/fresnel*`
+    `rm -rf /tmp/fresnel*.yml`
   end
   
   def timeout
